@@ -25,7 +25,7 @@ export const navItems: NavItem[] = [
     ],
   },
   { label: "آنالیز ها", type: "link", href: "#" },
-  { label: "نمایندگان", type: "link", href: "#" },
+  { label: "پروفایل", type: "link", href: "#" },
 ];
 
 function Header() {
