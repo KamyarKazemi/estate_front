@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@theme {
+  --color-header-primary: #28384c;
+  --color-text-header-primary: #ccc;
+  --text-primary-size: clamp(0.9rem, 0.8vw + 0.5rem, 1.1rem);
+  --text-icon-primary-size: clamp(1.25rem, 1.5vw + 1rem, 1.75rem);
+  --color-header-hover: #151515;
+}
+
+html,
+body {
+  height: 100%; /* Important for the percentage to work */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensures body is at least as tall as the screen */
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* The Active underline with a neon glow */
+.nav-item-active::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #60a5fa, transparent);
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.8);
+  border-radius: 2px;
+  animation: activeGlow 2s ease-in-out infinite;
+}
+
+@keyframes activeGlow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scaleX(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.1);
+  }
+}
+
+/* Subtle pulse for the header when interacting */
+.header-energized {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(30px) saturate(150%) !important;
+  box-shadow:
+    0 15px 50px -12px rgba(0, 0, 0, 0.6),
+    0 0 15px rgba(59, 130, 246, 0.1);
+}
+
+@keyframes glassMaterialize {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    border-color: rgba(255, 255, 255, 0);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@keyframes riseBlurIn {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+    filter: blur(10px); /* Increased blur for more impact */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes brandClipReveal {
+  0% {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes iconSpringPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-20deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes gradientSweep {
+  0% {
+    background-position: -200% center;
+    opacity: 0;
+    transform: translateY(8px); /* Add a slight lift effect */
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    background-position: 200% center;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dividerGrow {
+  0% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
