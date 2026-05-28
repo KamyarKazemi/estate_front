@@ -4,29 +4,29 @@ import DesktopNav from "./DesktopNav";
 import SearchForm from "./SearchForm";
 import MobileDrawer from "./MobileDrawer";
 
-export type NavItem =
-  | { label: string; type: "link"; href?: string }
-  | {
-      label: string;
-      type: "dropdown";
-      items: { label: string; href?: string }[];
-    };
+// export type NavItem =
+//   | { label: string; type: "link"; to?: string }
+//   | {
+//       label: string;
+//       type: "dropdown";
+//       items: { label: string; to?: string }[];
+//     };
 
-export const navItems: NavItem[] = [
-  { label: "خانه", type: "link", href: "#" },
-  {
-    label: "آگهی ها",
-    type: "dropdown",
-    items: [
-      { label: "بخر", href: "#" },
-      { label: "اجاره کن", href: "#" },
-      { label: "نو ساز ها", href: "#" },
-      { label: "املاک لوکس", href: "#" },
-    ],
-  },
-  { label: "آنالیز ها", type: "link", href: "#" },
-  { label: "پروفایل", type: "link", href: "#" },
-];
+// export const navItems: NavItem[] = [
+//   { label: "خانه", type: "link", to: "/" },
+//   {
+//     label: "آگهی ها",
+//     type: "dropdown",
+//     items: [
+//       { label: "بخر", to: "/listings/buy" },
+//       { label: "اجاره کن", to: "/listings/rent" },
+//       { label: "نو ساز ها", to: "/listings/new" },
+//       { label: "املاک لوکس", to: "/listings/luxury" },
+//     ],
+//   },
+//   { label: "آنالیز ها", type: "link", to: "/analytics" },
+//   { label: "پروفایل", type: "link", to: "/profile" },
+// ];
 
 function Header() {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -144,7 +144,6 @@ function Header() {
 
         {/* DESKTOP NAVIGATION */}
         <DesktopNav
-          navItems={navItems}
           activeIndex={activeIndex}
           hoveredIndex={hoveredIndex}
           isDropdownClicked={isDropdownClicked}
@@ -165,7 +164,6 @@ function Header() {
           isMobileMenuMounted={isMobileMenuMounted}
           isMobileMenuOpen={isMobileMenuOpen}
           isMobileListingsOpen={isMobileListingsOpen}
-          navItems={navItems}
           mobileMenuRef={mobileMenuRef}
           setIsMobileMenuMounted={setIsMobileMenuMounted}
           setIsMobileListingsOpen={setIsMobileListingsOpen}
