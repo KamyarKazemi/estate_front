@@ -31,15 +31,16 @@ function Profile() {
   const [role, setRole] = useState<NormalUserRole | "">("");
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
 
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  // Derived (no effect needed)
   const maxStep: Step =
     clientType === "normal" ? (mode === "signup" ? 3 : 2) : 1;
   const effectiveStep: Step = (step > maxStep ? maxStep : step) as Step;
 
-  // ---------- Input rules ----------
   const normalizeIranPhone = (raw: string) =>
     raw.replace(/[^\d]/g, "").slice(0, 11);
 
@@ -48,21 +49,26 @@ function Profile() {
     return cleaned.replace(/\s+/g, " ").trimStart();
   };
 
+  const normalizeEmail = (raw: string) => raw.trim().toLowerCase();
+
   const isPhoneValidEnough = phone.replace(/[^\d]/g, "").length >= 10;
   const isOtpComplete = otp.every((d) => d.length === 1 && /^\d$/.test(d));
-  const isRoleSelected = role !== "";
-
-  const isNameValid =
-    mode === "signup" &&
-    clientType === "normal" &&
-    firstName.trim().length >= 2 &&
-    lastName.trim().length >= 2;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  const isPasswordValid = password.length >= 8;
+  const doPasswordsMatch =
+    password.length > 0 &&
+    confirmPassword.length > 0 &&
+    password === confirmPassword;
 
   const isPersonalInfoValid =
     mode === "signup" &&
     clientType === "normal" &&
-    isRoleSelected &&
-    isNameValid;
+    firstName.trim().length >= 2 &&
+    lastName.trim().length >= 2 &&
+    isEmailValid &&
+    role !== "" &&
+    isPasswordValid &&
+    doPasswordsMatch;
 
   const stepCompletion: Record<Step, boolean> = {
     1: isPhoneValidEnough,
@@ -93,6 +99,9 @@ function Profile() {
       setRole("");
       setFirstName("");
       setLastName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
       setStep(1);
     } else {
       setStep((prev) =>
@@ -110,13 +119,15 @@ function Profile() {
       setRole("");
       setFirstName("");
       setLastName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
       setStep((prev) => (prev > 2 ? 2 : prev));
     } else {
       setStep((prev) => (prev > 3 ? 3 : prev));
     }
   };
 
-  // ---------- OTP handlers ----------
   const focusOtpIndex = (idx: number) => {
     const el = otpRefs.current[idx];
     el?.focus();
@@ -192,7 +203,6 @@ function Profile() {
     if (lastFilled >= 0) focusOtpIndex(lastFilled);
   };
 
-  // ---------- Motion variants ----------
   const springy: Transition = prefersReducedMotion
     ? { duration: 0 }
     : {
@@ -686,73 +696,11 @@ function Profile() {
                               مشخصات
                             </div>
                             <div className="text-sm sm:text-base text-slate-300 mt-2 leading-7">
-                              نقش خود را انتخاب کنید و سپس نام و نام خانوادگی را
-                              وارد کنید.
+                              لطفاً اطلاعات زیر را تکمیل کنید.
                             </div>
                           </div>
 
-                          <div className="max-w-2xl">
-                            <div className="text-sm sm:text-base text-slate-200 mb-2">
-                              نقش شما
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {[
-                                {
-                                  value: "buyer",
-                                  label: "خریدار",
-                                  desc: "به‌دنبال خرید ملک هستم",
-                                },
-                                {
-                                  value: "seller",
-                                  label: "فروشنده",
-                                  desc: "برای فروش ملک ثبت‌نام می‌کنم",
-                                },
-                                {
-                                  value: "renter",
-                                  label: "مستاجر",
-                                  desc: "به‌دنبال اجاره ملک هستم",
-                                },
-                                {
-                                  value: "owner",
-                                  label: "مالک",
-                                  desc: "مالک ملک هستم",
-                                },
-                              ].map((item) => {
-                                const active = role === item.value;
-
-                                return (
-                                  <button
-                                    key={item.value}
-                                    type="button"
-                                    onClick={() =>
-                                      setRole(item.value as NormalUserRole)
-                                    }
-                                    className={`text-right rounded-2xl border px-5 py-4 transition ${
-                                      active
-                                        ? "border-indigo-400/30 bg-indigo-500/10 text-white shadow-[0_12px_40px_rgba(99,102,241,0.18)]"
-                                        : "border-white/10 bg-slate-950/35 text-slate-200 hover:bg-white/7"
-                                    }`}
-                                  >
-                                    <div className="text-base font-semibold">
-                                      {item.label}
-                                    </div>
-                                    <div className="mt-2 text-sm text-slate-300 leading-7">
-                                      {item.desc}
-                                    </div>
-                                  </button>
-                                );
-                              })}
-                            </div>
-
-                            {!role && (
-                              <div className="mt-3 text-xs text-amber-200/90">
-                                لطفاً یک نقش انتخاب کنید.
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
                             <div>
                               <label className="block text-sm sm:text-base text-slate-200 mb-2">
                                 نام
@@ -773,9 +721,6 @@ function Profile() {
                                 placeholder="مثلاً علی"
                                 autoComplete="given-name"
                               />
-                              <div className="mt-2 text-xs text-slate-400 leading-6">
-                                فقط حروف (فارسی/انگلیسی) مجاز است.
-                              </div>
                             </div>
 
                             <div>
@@ -798,9 +743,150 @@ function Profile() {
                                 placeholder="مثلاً محمدی"
                                 autoComplete="family-name"
                               />
-                              <div className="mt-2 text-xs text-slate-400 leading-6">
-                                فقط حروف (فارسی/انگلیسی) مجاز است.
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
+                                ایمیل
+                              </label>
+                              <input
+                                value={email}
+                                onChange={(e) =>
+                                  setEmail(normalizeEmail(e.target.value))
+                                }
+                                className="
+                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
+                                  px-4 text-sm sm:text-base text-white outline-none
+                                  placeholder:text-slate-500
+                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+                                  focus:ring-2 focus:ring-indigo-400/45
+                                  transition
+                                "
+                                placeholder="example@email.com"
+                                inputMode="email"
+                                autoComplete="email"
+                              />
+                              {!email ? null : !isEmailValid ? (
+                                <div className="mt-2 text-xs text-amber-200/90 leading-6">
+                                  فرمت ایمیل درست نیست.
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="sm:col-span-2">
+                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
+                                نقش
+                              </label>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {[
+                                  {
+                                    value: "buyer",
+                                    label: "خریدار",
+                                    desc: "به‌دنبال خرید ملک هستم",
+                                  },
+                                  {
+                                    value: "seller",
+                                    label: "فروشنده",
+                                    desc: "برای فروش ملک ثبت‌نام می‌کنم",
+                                  },
+                                  {
+                                    value: "renter",
+                                    label: "مستاجر",
+                                    desc: "به‌دنبال اجاره ملک هستم",
+                                  },
+                                  {
+                                    value: "owner",
+                                    label: "مالک",
+                                    desc: "مالک ملک هستم",
+                                  },
+                                ].map((item) => {
+                                  const active = role === item.value;
+
+                                  return (
+                                    <button
+                                      key={item.value}
+                                      type="button"
+                                      onClick={() =>
+                                        setRole(item.value as NormalUserRole)
+                                      }
+                                      className={`text-right rounded-2xl border px-5 py-4 transition ${
+                                        active
+                                          ? "border-indigo-400/30 bg-indigo-500/10 text-white shadow-[0_12px_40px_rgba(99,102,241,0.18)]"
+                                          : "border-white/10 bg-slate-950/35 text-slate-200 hover:bg-white/7"
+                                      }`}
+                                      aria-pressed={active}
+                                    >
+                                      <div className="text-base font-semibold">
+                                        {item.label}
+                                      </div>
+                                      <div className="mt-2 text-sm text-slate-300 leading-7">
+                                        {item.desc}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
                               </div>
+
+                              {!role ? (
+                                <div className="mt-3 text-xs text-amber-200/90">
+                                  لطفاً یک نقش انتخاب کنید.
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div>
+                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
+                                رمز عبور
+                              </label>
+                              <input
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                type="password"
+                                className="
+                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
+                                  px-4 text-sm sm:text-base text-white outline-none
+                                  placeholder:text-slate-500
+                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+                                  focus:ring-2 focus:ring-indigo-400/45
+                                  transition
+                                "
+                                placeholder="حداقل ۸ کاراکتر"
+                                autoComplete="new-password"
+                              />
+                              {!password ? null : !isPasswordValid ? (
+                                <div className="mt-2 text-xs text-amber-200/90 leading-6">
+                                  رمز عبور باید حداقل ۸ کاراکتر باشد.
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div>
+                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
+                                تکرار رمز عبور
+                              </label>
+                              <input
+                                value={confirmPassword}
+                                onChange={(e) =>
+                                  setConfirmPassword(e.target.value)
+                                }
+                                type="password"
+                                className="
+                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
+                                  px-4 text-sm sm:text-base text-white outline-none
+                                  placeholder:text-slate-500
+                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+                                  focus:ring-2 focus:ring-indigo-400/45
+                                  transition
+                                "
+                                placeholder="دوباره وارد کنید"
+                                autoComplete="new-password"
+                              />
+                              {!confirmPassword ? null : !doPasswordsMatch ? (
+                                <div className="mt-2 text-xs text-amber-200/90 leading-6">
+                                  رمز عبور و تکرار آن یکسان نیستند.
+                                </div>
+                              ) : null}
                             </div>
                           </div>
 
