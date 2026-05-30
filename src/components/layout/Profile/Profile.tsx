@@ -10,6 +10,7 @@ import {
 type ClientType = "normal" | "estate";
 type Mode = "login" | "signup";
 type Step = 1 | 2 | 3;
+type NormalUserRole = "buyer" | "seller" | "renter" | "owner";
 
 const OTP_LENGTH = 4;
 
@@ -27,6 +28,7 @@ function Profile() {
   const [otp, setOtp] = useState<string[]>(
     Array.from({ length: OTP_LENGTH }, () => ""),
   );
+  const [role, setRole] = useState<NormalUserRole | "">("");
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
 
@@ -48,16 +50,24 @@ function Profile() {
 
   const isPhoneValidEnough = phone.replace(/[^\d]/g, "").length >= 10;
   const isOtpComplete = otp.every((d) => d.length === 1 && /^\d$/.test(d));
+  const isRoleSelected = role !== "";
+
   const isNameValid =
     mode === "signup" &&
     clientType === "normal" &&
     firstName.trim().length >= 2 &&
     lastName.trim().length >= 2;
 
+  const isPersonalInfoValid =
+    mode === "signup" &&
+    clientType === "normal" &&
+    isRoleSelected &&
+    isNameValid;
+
   const stepCompletion: Record<Step, boolean> = {
     1: isPhoneValidEnough,
     2: isOtpComplete,
-    3: isNameValid,
+    3: mode === "signup" ? isPersonalInfoValid : false,
   };
 
   const steps: StepItem[] = useMemo(() => {
@@ -70,7 +80,6 @@ function Profile() {
   }, [mode]);
 
   const goToStep = (next: Step) => {
-    // clamp to current maxStep without an effect (prevents "cascading renders" warnings)
     const clamped = (Math.min(Math.max(next, 1), maxStep) as Step) ?? 1;
     setStep(clamped);
   };
@@ -78,15 +87,14 @@ function Profile() {
   const setClientTypeSafe = (next: ClientType) => {
     setClientType(next);
 
-    // Avoid effects: if leaving normal, wipe normal-form state in the same event
     if (next !== "normal") {
       setPhone("");
       setOtp(Array.from({ length: OTP_LENGTH }, () => ""));
+      setRole("");
       setFirstName("");
       setLastName("");
       setStep(1);
     } else {
-      // Returning to normal: keep step but clamp
       setStep((prev) =>
         prev > (mode === "signup" ? 3 : 2)
           ? ((mode === "signup" ? 3 : 2) as Step)
@@ -98,13 +106,12 @@ function Profile() {
   const setModeSafe = (next: Mode) => {
     setMode(next);
 
-    // If switching to login, clear signup-only fields and clamp step (same event, no effect)
     if (next === "login") {
+      setRole("");
       setFirstName("");
       setLastName("");
       setStep((prev) => (prev > 2 ? 2 : prev));
     } else {
-      // switching to signup, allow up to step 3
       setStep((prev) => (prev > 3 ? 3 : prev));
     }
   };
@@ -160,6 +167,7 @@ function Profile() {
       if (idx > 0) focusOtpIndex(idx - 1);
       return;
     }
+
     if (key === "ArrowRight") {
       e.preventDefault();
       if (idx < OTP_LENGTH - 1) focusOtpIndex(idx + 1);
@@ -184,7 +192,7 @@ function Profile() {
     if (lastFilled >= 0) focusOtpIndex(lastFilled);
   };
 
-  // ---------- Motion variants (typed correctly) ----------
+  // ---------- Motion variants ----------
   const springy: Transition = prefersReducedMotion
     ? { duration: 0 }
     : {
@@ -214,7 +222,6 @@ function Profile() {
       dir="rtl"
       className="min-h-[calc(100vh-120px)] px-4 sm:px-6 lg:px-8 py-10 lg:py-14"
     >
-      {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div
           className="absolute -top-40 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full blur-3xl opacity-30"
@@ -233,7 +240,6 @@ function Profile() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/40" />
       </div>
 
-      {/* Desktop narrower */}
       <section className="mx-auto w-full max-w-2xl lg:max-w-3xl">
         <header className="mb-8 lg:mb-10">
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
@@ -256,9 +262,7 @@ function Profile() {
           "
         >
           <div className="p-5 sm:p-7 lg:p-8">
-            {/* Top controls */}
             <div className="mb-7 lg:mb-8 flex flex-col gap-4 lg:gap-5">
-              {/* Client type toggle */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="text-sm sm:text-base font-semibold text-slate-100">
                   نوع کاربر
@@ -317,7 +321,6 @@ function Profile() {
                 </div>
               </div>
 
-              {/* Mode toggle */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="text-sm sm:text-base font-semibold text-slate-100">
                   حالت
@@ -363,7 +366,6 @@ function Profile() {
               </div>
             </div>
 
-            {/* Main card */}
             {clientType === "normal" ? (
               <form
                 onSubmit={(e) => e.preventDefault()}
@@ -385,7 +387,6 @@ function Profile() {
                     </div>
                   </div>
 
-                  {/* Stepper */}
                   <div
                     className={`mt-4 grid gap-3 ${
                       maxStep === 2
@@ -604,12 +605,12 @@ function Profile() {
                                       idx === 0 ? handleOtpPaste : undefined
                                     }
                                     className="
-                                    h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
-                                    text-center text-white outline-none text-base sm:text-lg
-                                    shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                    focus:ring-2 focus:ring-indigo-400/45
-                                    transition
-                                  "
+                                      h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
+                                      text-center text-white outline-none text-base sm:text-lg
+                                      shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+                                      focus:ring-2 focus:ring-indigo-400/45
+                                      transition
+                                    "
                                     inputMode="numeric"
                                     autoComplete={
                                       idx === 0 ? "one-time-code" : "off"
@@ -649,7 +650,9 @@ function Profile() {
                             <button
                               type="button"
                               onClick={() => {
-                                if (mode === "signup") goToStep(3);
+                                if (mode === "signup") {
+                                  goToStep(3);
+                                }
                               }}
                               disabled={!isOtpComplete}
                               className="
@@ -683,11 +686,73 @@ function Profile() {
                               مشخصات
                             </div>
                             <div className="text-sm sm:text-base text-slate-300 mt-2 leading-7">
-                              نام و نام خانوادگی خود را وارد کنید.
+                              نقش خود را انتخاب کنید و سپس نام و نام خانوادگی را
+                              وارد کنید.
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                          <div className="max-w-2xl">
+                            <div className="text-sm sm:text-base text-slate-200 mb-2">
+                              نقش شما
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {[
+                                {
+                                  value: "buyer",
+                                  label: "خریدار",
+                                  desc: "به‌دنبال خرید ملک هستم",
+                                },
+                                {
+                                  value: "seller",
+                                  label: "فروشنده",
+                                  desc: "برای فروش ملک ثبت‌نام می‌کنم",
+                                },
+                                {
+                                  value: "renter",
+                                  label: "مستاجر",
+                                  desc: "به‌دنبال اجاره ملک هستم",
+                                },
+                                {
+                                  value: "owner",
+                                  label: "مالک",
+                                  desc: "مالک ملک هستم",
+                                },
+                              ].map((item) => {
+                                const active = role === item.value;
+
+                                return (
+                                  <button
+                                    key={item.value}
+                                    type="button"
+                                    onClick={() =>
+                                      setRole(item.value as NormalUserRole)
+                                    }
+                                    className={`text-right rounded-2xl border px-5 py-4 transition ${
+                                      active
+                                        ? "border-indigo-400/30 bg-indigo-500/10 text-white shadow-[0_12px_40px_rgba(99,102,241,0.18)]"
+                                        : "border-white/10 bg-slate-950/35 text-slate-200 hover:bg-white/7"
+                                    }`}
+                                  >
+                                    <div className="text-base font-semibold">
+                                      {item.label}
+                                    </div>
+                                    <div className="mt-2 text-sm text-slate-300 leading-7">
+                                      {item.desc}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {!role && (
+                              <div className="mt-3 text-xs text-amber-200/90">
+                                لطفاً یک نقش انتخاب کنید.
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
                             <div>
                               <label className="block text-sm sm:text-base text-slate-200 mb-2">
                                 نام
@@ -755,7 +820,7 @@ function Profile() {
 
                             <button
                               type="submit"
-                              disabled={!isNameValid}
+                              disabled={!isPersonalInfoValid}
                               className="
                                 relative inline-flex items-center justify-center overflow-hidden
                                 rounded-2xl px-7 py-3.5 text-sm sm:text-base font-semibold text-white
