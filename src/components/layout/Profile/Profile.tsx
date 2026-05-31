@@ -7,7 +7,7 @@ import {
   type Transition,
 } from "framer-motion";
 
-// type ClientType = "normal" | "estate";
+type ClientType = "normal" | "estate";
 type Mode = "login" | "signup";
 type Step = 1 | 2 | 3;
 type NormalUserRole = "buyer" | "seller" | "renter" | "owner";
@@ -19,7 +19,7 @@ type StepItem = { id: Step; title: string };
 function Profile() {
   const prefersReducedMotion = useReducedMotion();
 
-  // const [clientType, setClientType] = useState<ClientType>("normal");
+  const [clientType, setClientType] = useState<ClientType>("normal");
   const [mode, setMode] = useState<Mode>("login");
 
   const [step, setStep] = useState<Step>(1);
@@ -38,7 +38,7 @@ function Profile() {
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const maxStep: Step =
-    // clientType === "normal" ? (mode === "signup" ? 3 : 2) : 1;
+    clientType === "normal" ? (mode === "signup" ? 3 : 2) : 1;
   const effectiveStep: Step = (step > maxStep ? maxStep : step) as Step;
 
   const normalizeIranPhone = (raw: string) =>
@@ -62,7 +62,7 @@ function Profile() {
 
   const isPersonalInfoValid =
     mode === "signup" &&
-    // clientType === "normal" &&
+    clientType === "normal" &&
     firstName.trim().length >= 2 &&
     lastName.trim().length >= 2 &&
     isEmailValid &&
@@ -90,27 +90,27 @@ function Profile() {
     setStep(clamped);
   };
 
-  // const setClientTypeSafe = (next: ClientType) => {
-  //   setClientType(next);
+  const setClientTypeSafe = (next: ClientType) => {
+    setClientType(next);
 
-  //   if (next !== "normal") {
-  //     setPhone("");
-  //     setOtp(Array.from({ length: OTP_LENGTH }, () => ""));
-  //     setRole("");
-  //     setFirstName("");
-  //     setLastName("");
-  //     setEmail("");
-  //     setPassword("");
-  //     setConfirmPassword("");
-  //     setStep(1);
-  //   } else {
-  //     setStep((prev) =>
-  //       prev > (mode === "signup" ? 3 : 2)
-  //         ? ((mode === "signup" ? 3 : 2) as Step)
-  //         : prev,
-  //     );
-  //   }
-  // };
+    if (next !== "normal") {
+      setPhone("");
+      setOtp(Array.from({ length: OTP_LENGTH }, () => ""));
+      setRole("");
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setStep(1);
+    } else {
+      setStep((prev) =>
+        prev > (mode === "signup" ? 3 : 2)
+          ? ((mode === "signup" ? 3 : 2) as Step)
+          : prev,
+      );
+    }
+  };
 
   const setModeSafe = (next: Mode) => {
     setMode(next);
@@ -287,14 +287,14 @@ function Profile() {
                 >
                   <button
                     type="button"
-                    // onClick={() => setClientTypeSafe("normal")}
+                    onClick={() => setClientTypeSafe("normal")}
                     className={`
                       relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                      // ${clientType === "normal" ? "text-white" : "text-slate-300 hover:text-white"}
+                      ${clientType === "normal" ? "text-white" : "text-slate-300 hover:text-white"}
                     `}
-                    // aria-pressed={clientType === "normal"}
+                    aria-pressed={clientType === "normal"}
                   >
-                    {/* {clientType === "normal" && ( */}
+                    {clientType === "normal" && (
                       <span
                         className="
                           absolute inset-0 -z-10 rounded-xl
@@ -303,20 +303,20 @@ function Profile() {
                           shadow-[0_10px_30px_rgba(99,102,241,0.18)]
                         "
                       />
-                    {/* )} */}
+                    )}
                     کاربر عادی
                   </button>
 
                   <button
                     type="button"
-                    // onClick={() => setClientTypeSafe("estate")}
+                    onClick={() => setClientTypeSafe("estate")}
                     className={`
                       relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                   {  ${clientType === "estate" ? "text-white" : "text-slate-300 hover:text-white"}}
+                      ${clientType === "estate" ? "text-white" : "text-slate-300 hover:text-white"}
                     `}
-                    // aria-pressed={clientType === "estate"}
+                    aria-pressed={clientType === "estate"}
                   >
-                    {/* {clientType === "estate" && ( */}
+                    {clientType === "estate" && (
                       <span
                         className="
                           absolute inset-0 -z-10 rounded-xl
@@ -325,7 +325,7 @@ function Profile() {
                           shadow-[0_10px_30px_rgba(16,185,129,0.14)]
                         "
                       />
-                    {/* )} */}
+                    )}
                     کاربر املاک
                   </button>
                 </div>
@@ -769,68 +769,6 @@ function Profile() {
                               {!email ? null : !isEmailValid ? (
                                 <div className="mt-2 text-xs text-amber-200/90 leading-6">
                                   فرمت ایمیل درست نیست.
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div className="sm:col-span-2">
-                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
-                                نقش
-                              </label>
-
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {[
-                                  {
-                                    value: "buyer",
-                                    label: "خریدار",
-                                    desc: "به‌دنبال خرید ملک هستم",
-                                  },
-                                  {
-                                    value: "seller",
-                                    label: "فروشنده",
-                                    desc: "برای فروش ملک ثبت‌نام می‌کنم",
-                                  },
-                                  {
-                                    value: "renter",
-                                    label: "مستاجر",
-                                    desc: "به‌دنبال اجاره ملک هستم",
-                                  },
-                                  {
-                                    value: "owner",
-                                    label: "مالک",
-                                    desc: "مالک ملک هستم",
-                                  },
-                                ].map((item) => {
-                                  const active = role === item.value;
-
-                                  return (
-                                    <button
-                                      key={item.value}
-                                      type="button"
-                                      onClick={() =>
-                                        setRole(item.value as NormalUserRole)
-                                      }
-                                      className={`text-right rounded-2xl border px-5 py-4 transition ${
-                                        active
-                                          ? "border-indigo-400/30 bg-indigo-500/10 text-white shadow-[0_12px_40px_rgba(99,102,241,0.18)]"
-                                          : "border-white/10 bg-slate-950/35 text-slate-200 hover:bg-white/7"
-                                      }`}
-                                      aria-pressed={active}
-                                    >
-                                      <div className="text-base font-semibold">
-                                        {item.label}
-                                      </div>
-                                      <div className="mt-2 text-sm text-slate-300 leading-7">
-                                        {item.desc}
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-
-                              {!role ? (
-                                <div className="mt-3 text-xs text-amber-200/90">
-                                  لطفاً یک نقش انتخاب کنید.
                                 </div>
                               ) : null}
                             </div>
