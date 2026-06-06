@@ -1,11 +1,13 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { sendOtpThunk } from "../../../redux/thunks/sentOtpThunk";
 import {
   AnimatePresence,
   motion,
   useReducedMotion,
   type Variants,
   type Transition,
-} from "framer-motion";
+} from "motion/react";
 
 type ClientType = "normal" | "estate";
 type Mode = "login" | "signup";
@@ -17,6 +19,15 @@ const OTP_LENGTH = 5;
 type StepItem = { id: Step; title: string };
 
 function Profile() {
+  // redux related
+  const dispatch = useDispatch();
+
+  const { otp_session_token, loading } = useSelector(
+    (state: any) => state.auth,
+  );
+
+  // redux related
+
   const prefersReducedMotion = useReducedMotion();
 
   const [clientType, setClientType] = useState<ClientType>("normal");
@@ -39,7 +50,7 @@ function Profile() {
 
   const maxStep: Step =
     clientType === "normal" ? (mode === "signup" ? 3 : 2) : 1;
-  const effectiveStep: Step = (step > maxStep ? maxStep : step) as Step;
+  const effectiveStep = otp_session_token ? 2 : step;
 
   const normalizeIranPhone = (raw: string) =>
     raw.replace(/[^\d]/g, "").slice(0, 11);
@@ -226,6 +237,12 @@ function Profile() {
       ? { opacity: 0 }
       : { opacity: 0, y: -8, transition: { duration: 0.18, ease: "easeIn" } },
   };
+
+  useEffect(() => {
+    if (otp_session_token) {
+      setStep(2);
+    }
+  }, [otp_session_token]);
 
   return (
     <main
@@ -557,8 +574,8 @@ function Profile() {
 
                             <button
                               type="button"
-                              onClick={() => goToStep(2)}
-                              disabled={!isPhoneValidEnough}
+                              onClick={() => dispatch(sendOtpThunk(phone))}
+                              disabled={!isPhoneValidEnough || loading}
                               className="
                                 relative inline-flex items-center justify-center overflow-hidden
                                 rounded-2xl px-7 py-3.5 text-sm sm:text-base font-semibold text-white
