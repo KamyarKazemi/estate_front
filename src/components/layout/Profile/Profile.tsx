@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { sendNumberThunk } from "../../../redux/thunks/sendNumberThunk";
 import { sendOtpThunk } from "../../../redux/thunks/sendOtpThunk";
@@ -50,9 +50,6 @@ function Profile() {
 
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const maxStep: Step =
-    clientType === "normal" ? (mode === "signup" ? 3 : 2) : 1;
-
   const normalizeIranPhone = (raw: string) =>
     raw.replace(/[^\d]/g, "").slice(0, 11);
 
@@ -88,14 +85,19 @@ function Profile() {
     3: mode === "signup" ? isPersonalInfoValid : false,
   };
 
-  const steps: StepItem[] = useMemo(() => {
-    const base: StepItem[] = [
-      { id: 1, title: "شماره موبایل" },
-      { id: 2, title: "کد تایید" },
-    ];
-    if (mode === "signup") base.push({ id: 3, title: "مشخصات" });
-    return base;
-  }, [mode]);
+  const flowConfig = {
+    login: {
+      normal: [1, 2],
+      estate: [1, 2],
+    },
+    signup: {
+      normal: [1, 2, 3],
+      estate: [1, 2, 3], // later estate form
+    },
+  };
+
+  const steps = flowConfig[mode][clientType];
+  const maxStep = steps.length;
 
   const goToStep = (targetStep: 1 | 2 | 3) => {
     if (targetStep > maxAllowedStep) return;
@@ -239,7 +241,6 @@ function Profile() {
       : { opacity: 0, y: -8, transition: { duration: 0.18, ease: "easeIn" } },
   };
 
-  // const maxAllowedStep = registration_token ? 3 : otp_session_token ? 2 : 1;
   const maxAllowedStep: Step = registration_token
     ? 3
     : otp_session_token
@@ -247,6 +248,12 @@ function Profile() {
       : 1;
 
   // in your component:
+
+  const stepLabels: Record<Step, string> = {
+    1: "شماره موبایل",
+    2: "کد تایید",
+    3: "مشخصات",
+  };
 
   useEffect(() => {
     setStep(maxAllowedStep);
@@ -429,9 +436,10 @@ function Profile() {
                         : "grid-cols-1 sm:grid-cols-3"
                     }`}
                   >
-                    {steps.map(({ id, title }) => {
+                    {steps.map((id) => {
                       const isDone = stepCompletion[id];
                       const isActive = step === id;
+                      const title = stepLabels[id];
 
                       return (
                         <motion.button
