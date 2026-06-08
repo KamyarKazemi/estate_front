@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { sendNumberThunk } from "../thunks/sendNumberThunk";
 import { sendOtpThunk } from "../thunks/sendOtpThunk";
+import { completeRegister } from "../thunks/completeRegisterThunk";
 
 interface AuthState {
   phone_number: string | null;
@@ -49,6 +50,17 @@ const authSlice = createSlice({
         state.registration_token = action.payload.registration_token;
       })
       .addCase(sendOtpThunk.rejected, (state) => {
+        state.loading = false;
+      });
+
+    builder
+      .addCase(completeRegister.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(completeRegister.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(completeRegister.rejected, (state) => {
         state.loading = false;
       });
   },

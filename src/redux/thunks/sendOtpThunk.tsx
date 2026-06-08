@@ -8,6 +8,9 @@ interface VerifyPayload {
   otp_session_token: string;
 }
 
+console.log("ENV:", import.meta.env);
+console.log("SECOND URL:", import.meta.env.VITE_BACKEND_URL_REGISTER_FIRST);
+
 export const sendOtpThunk = createAsyncThunk(
   "otp/send",
   async (
@@ -18,6 +21,10 @@ export const sendOtpThunk = createAsyncThunk(
       const response = await axios.post(URL, {
         otp_code,
         otp_session_token,
+      });
+
+      console.log("otp thunk dispatched!", {
+        otp_code,
       });
 
       return {

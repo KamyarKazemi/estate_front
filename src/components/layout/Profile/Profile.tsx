@@ -239,15 +239,18 @@ function Profile() {
       : { opacity: 0, y: -8, transition: { duration: 0.18, ease: "easeIn" } },
   };
 
-  const maxAllowedStep = registration_token ? 3 : otp_session_token ? 2 : 1;
+  // const maxAllowedStep = registration_token ? 3 : otp_session_token ? 2 : 1;
+  const maxAllowedStep: Step = registration_token
+    ? 3
+    : otp_session_token
+      ? 2
+      : 1;
 
   // in your component:
 
   useEffect(() => {
-    if (otp_session_token) {
-      setStep(2);
-    }
-  }, [otp_session_token]);
+    setStep(maxAllowedStep);
+  }, [maxAllowedStep]);
 
   return (
     <main

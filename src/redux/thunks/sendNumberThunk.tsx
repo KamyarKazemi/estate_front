@@ -20,7 +20,6 @@ export const sendNumberThunk = createAsyncThunk(
       });
 
       return {
-        phone_number,
         otp_session_token: response.data.otp_session_token,
       };
     } catch (error: any) {
