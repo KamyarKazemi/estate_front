@@ -1,6 +1,8 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { sendOtpThunk } from "../../../redux/thunks/sentOtpThunk";
+import { sendNumberThunk } from "../../../redux/thunks/sendNumberThunk";
+import { sendOtpThunk } from "../../../redux/thunks/sendOtpThunk";
+import type { AppDispatch } from "../../../redux/store";
 import {
   AnimatePresence,
   motion,
@@ -20,9 +22,9 @@ type StepItem = { id: Step; title: string };
 
 function Profile() {
   // redux related
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const { otp_session_token, loading } = useSelector(
+  const { otp_session_token, registration_token, loading } = useSelector(
     (state: any) => state.auth,
   );
 
@@ -50,7 +52,6 @@ function Profile() {
 
   const maxStep: Step =
     clientType === "normal" ? (mode === "signup" ? 3 : 2) : 1;
-  const effectiveStep = otp_session_token ? 2 : step;
 
   const normalizeIranPhone = (raw: string) =>
     raw.replace(/[^\d]/g, "").slice(0, 11);
@@ -96,9 +97,9 @@ function Profile() {
     return base;
   }, [mode]);
 
-  const goToStep = (next: Step) => {
-    const clamped = (Math.min(Math.max(next, 1), maxStep) as Step) ?? 1;
-    setStep(clamped);
+  const goToStep = (targetStep: 1 | 2 | 3) => {
+    if (targetStep > maxAllowedStep) return;
+    setStep(targetStep);
   };
 
   const setClientTypeSafe = (next: ClientType) => {
@@ -238,6 +239,10 @@ function Profile() {
       : { opacity: 0, y: -8, transition: { duration: 0.18, ease: "easeIn" } },
   };
 
+  const maxAllowedStep = registration_token ? 3 : otp_session_token ? 2 : 1;
+
+  // in your component:
+
   useEffect(() => {
     if (otp_session_token) {
       setStep(2);
@@ -251,20 +256,20 @@ function Profile() {
     >
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div
-          className="absolute -top-40 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full blur-3xl opacity-30"
+          className="absolute -top-40 left-1/2 h-140 w-140 -translate-x-1/2 rounded-full blur-3xl opacity-30"
           style={{
             background:
               "radial-gradient(circle at 30% 30%, rgba(99,102,241,0.55), rgba(0,0,0,0))",
           }}
         />
         <div
-          className="absolute -bottom-56 right-[-140px] h-[620px] w-[620px] rounded-full blur-3xl opacity-25"
+          className="absolute -bottom-56 -right-35 h-155 w-155 rounded-full blur-3xl opacity-25"
           style={{
             background:
               "radial-gradient(circle at 40% 40%, rgba(16,185,129,0.45), rgba(0,0,0,0))",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/40" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/0 via-black/0 to-black/40" />
       </div>
 
       <section className="mx-auto w-full max-w-2xl lg:max-w-3xl">
@@ -410,7 +415,7 @@ function Profile() {
                         : "ثبت نام کاربر عادی"}
                     </div>
                     <div className="text-sm text-slate-300">
-                      مرحله {effectiveStep} از {maxStep}
+                      مرحله {step} از {maxStep}
                     </div>
                   </div>
 
@@ -423,7 +428,7 @@ function Profile() {
                   >
                     {steps.map(({ id, title }) => {
                       const isDone = stepCompletion[id];
-                      const isActive = effectiveStep === id;
+                      const isActive = step === id;
 
                       return (
                         <motion.button
@@ -508,7 +513,7 @@ function Profile() {
                 <div className="p-5 sm:p-6 lg:p-7">
                   <div className="relative min-h-[320px] sm:min-h-[340px]">
                     <AnimatePresence mode="wait">
-                      {effectiveStep === 1 && (
+                      {step === 1 && (
                         <motion.section
                           key="step-1"
                           variants={stepVariants}
@@ -574,7 +579,16 @@ function Profile() {
 
                             <button
                               type="button"
-                              onClick={() => dispatch(sendOtpThunk(phone))}
+                              onClick={async () => {
+                                try {
+                                  await dispatch(
+                                    sendNumberThunk(phone),
+                                  ).unwrap();
+                                  // no need to call goToStep here!
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }}
                               disabled={!isPhoneValidEnough || loading}
                               className="
                                 relative inline-flex items-center justify-center overflow-hidden
@@ -594,7 +608,7 @@ function Profile() {
                         </motion.section>
                       )}
 
-                      {effectiveStep === 2 && (
+                      {step === 2 && (
                         <motion.section
                           key="step-2"
                           variants={stepVariants}
@@ -676,12 +690,25 @@ function Profile() {
 
                             <button
                               type="button"
-                              onClick={() => {
-                                if (mode === "signup") {
-                                  goToStep(3);
+                              onClick={async () => {
+                                try {
+                                  const otpCode = otp.join("");
+
+                                  await dispatch(
+                                    sendOtpThunk({
+                                      otp_code: otpCode,
+                                      otp_session_token,
+                                    }),
+                                  ).unwrap();
+
+                                  if (mode === "signup") {
+                                    goToStep(3);
+                                  }
+                                } catch (err) {
+                                  console.error("OTP failed:", err);
                                 }
                               }}
-                              disabled={!isOtpComplete}
+                              disabled={!isOtpComplete || loading}
                               className="
                                 relative inline-flex items-center justify-center overflow-hidden
                                 rounded-2xl px-7 py-3.5 text-sm sm:text-base font-semibold text-white
@@ -700,7 +727,7 @@ function Profile() {
                         </motion.section>
                       )}
 
-                      {effectiveStep === 3 && mode === "signup" && (
+                      {step === 3 && mode === "signup" && (
                         <motion.section
                           key="step-3"
                           variants={stepVariants}
