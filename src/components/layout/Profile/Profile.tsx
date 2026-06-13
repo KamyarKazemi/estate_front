@@ -1,247 +1,51 @@
-import React, { useRef, useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+
+import { PhoneStep } from "./profile-components/PhoneStep";
+import { OtpStep } from "./profile-components/OtpStep";
+import { PersonalInfoStep } from "./profile-components/PersonalInfoStep";
+import { StepNavigation } from "./profile-components/StepNavigation";
+import { Toggle } from "./ui/Toggle";
+
+import { useOtp } from "./hooks/useOtp";
+import { useSignupValidation } from "./hooks/useSignupValidation";
+
+import type { ClientType, Mode, Step, SignupValues } from "./types/types";
+
 import { sendNumberThunk } from "../../../redux/thunks/sendNumberThunk";
 import { sendOtpThunk } from "../../../redux/thunks/sendOtpThunk";
 import { completeRegister } from "../../../redux/thunks/completeRegisterThunk";
-import type { AppDispatch } from "../../../redux/store";
-import {
-  AnimatePresence,
-  motion,
-  useReducedMotion,
-  type Variants,
-  type Transition,
-} from "motion/react";
 
-type ClientType = "customer" | "Agent";
-type Mode = "login" | "signup";
-type Step = 1 | 2 | 3;
-type NormalUserRole = "customer";
-
-const OTP_LENGTH = 5;
-
-type StepItem = { id: Step; title: string };
+import type { AppDispatch, RootState } from "../../../redux/store";
 
 function Profile() {
-  // redux related
   const dispatch = useDispatch<AppDispatch>();
 
   const { otp_session_token, registration_token, loading } = useSelector(
-    (state: any) => state.auth,
+    (state: RootState) => state.auth,
   );
 
-  // redux related
+  /* ---------------- CLIENT + MODE ---------------- */
 
-  const prefersReducedMotion = useReducedMotion();
-
-  const [clientType, setClientType] = useState<ClientType>("customer");
+  const [clientType, setClientType] = useState<ClientType>("Customer");
   const [mode, setMode] = useState<Mode>("login");
+
+  /* ---------------- STEP ---------------- */
 
   const [step, setStep] = useState<Step>(1);
 
-  const [phone, setPhone] = useState<string>("");
-  const [otp, setOtp] = useState<string[]>(
-    Array.from({ length: OTP_LENGTH }, () => ""),
-  );
-  const apiRole = clientType;
+  const steps: Step[] = [1, 2, 3];
 
-  const [role, setRole] = useState("");
-  const [firstName, setFirstName] = useState<string>("");
-  const [lastName, setLastName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>("");
-
-  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
-
-  const normalizeIranPhone = (raw: string) =>
-    raw.replace(/[^\d]/g, "").slice(0, 11);
-
-  const normalizeName = (raw: string) => {
-    const cleaned = raw.replace(/[^a-zA-Z\u0600-\u06FF\s-]/g, "");
-    return cleaned.replace(/\s+/g, " ").trimStart();
+  const stepLabels: Record<Step, string> = {
+    1: "Phone",
+    2: "Verification",
+    3: "Profile",
   };
-
-  const normalizeEmail = (raw: string) => raw.trim().toLowerCase();
-
-  const isPhoneValidEnough = phone.replace(/[^\d]/g, "").length >= 10;
-  const isOtpComplete = otp.every((d) => d.length === 1 && /^\d$/.test(d));
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
-  const isPasswordValid = password.length >= 8;
-  const doPasswordsMatch =
-    password.length > 0 &&
-    confirmPassword.length > 0 &&
-    password === confirmPassword;
-
-  const isPersonalInfoValid =
-    mode === "signup" &&
-    clientType === "customer" &&
-    firstName.trim().length >= 2 &&
-    lastName.trim().length >= 2 &&
-    isEmailValid &&
-    role !== "" &&
-    isPasswordValid &&
-    doPasswordsMatch;
 
   const stepCompletion: Record<Step, boolean> = {
-    1: isPhoneValidEnough,
-    2: isOtpComplete,
-    3: mode === "signup" ? isPersonalInfoValid : false,
-  };
-
-  const flowConfig = {
-    login: {
-      customer: [1, 2],
-      Agent: [1, 2],
-    },
-    signup: {
-      customer: [1, 2, 3],
-      Agent: [1, 2, 3], // later estate form
-    },
-  };
-
-  const steps = flowConfig[mode][clientType];
-  const maxStep = steps.length;
-
-  const goToStep = (targetStep: 1 | 2 | 3) => {
-    if (targetStep > maxAllowedStep) return;
-    setStep(targetStep);
-  };
-
-  const setClientTypeSafe = (next: ClientType) => {
-    setClientType(next);
-
-    if (next !== "customer") {
-      setPhone("");
-      setOtp(Array.from({ length: OTP_LENGTH }, () => ""));
-      setRole("");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      setStep(1);
-    } else {
-      setStep((prev) =>
-        prev > (mode === "signup" ? 3 : 2)
-          ? ((mode === "signup" ? 3 : 2) as Step)
-          : prev,
-      );
-    }
-  };
-
-  const setModeSafe = (next: Mode) => {
-    setMode(next);
-
-    if (next === "login") {
-      setRole("");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-      setStep((prev) => (prev > 2 ? 2 : prev));
-    } else {
-      setStep((prev) => (prev > 3 ? 3 : prev));
-    }
-  };
-
-  const focusOtpIndex = (idx: number) => {
-    const el = otpRefs.current[idx];
-    el?.focus();
-    el?.select?.();
-  };
-
-  const setOtpAt = (idx: number, value: string) => {
-    setOtp((prev) => {
-      const next = [...prev];
-      next[idx] = value;
-      return next;
-    });
-  };
-
-  const handleOtpChange = (idx: number, value: string) => {
-    const v = value.replace(/[^\d]/g, "");
-    if (!v) {
-      setOtpAt(idx, "");
-      return;
-    }
-    const digit = v.slice(-1);
-    setOtpAt(idx, digit);
-    if (idx < OTP_LENGTH - 1) focusOtpIndex(idx + 1);
-  };
-
-  const handleOtpKeyDown = (
-    idx: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    const key = e.key;
-
-    if (key === "Backspace") {
-      if (otp[idx]) {
-        e.preventDefault();
-        setOtpAt(idx, "");
-        return;
-      }
-      if (idx > 0) {
-        e.preventDefault();
-        setOtpAt(idx - 1, "");
-        focusOtpIndex(idx - 1);
-      }
-      return;
-    }
-
-    if (key === "ArrowLeft") {
-      e.preventDefault();
-      if (idx > 0) focusOtpIndex(idx - 1);
-      return;
-    }
-
-    if (key === "ArrowRight") {
-      e.preventDefault();
-      if (idx < OTP_LENGTH - 1) focusOtpIndex(idx + 1);
-      return;
-    }
-
-    if (key.length === 1 && !/^\d$/.test(key)) {
-      e.preventDefault();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const text = e.clipboardData.getData("text");
-    const digits = text.replace(/[^\d]/g, "").slice(0, OTP_LENGTH);
-    if (!digits) return;
-
-    e.preventDefault();
-    const next = Array.from({ length: OTP_LENGTH }, (_, i) => digits[i] ?? "");
-    setOtp(next);
-
-    const lastFilled = Math.min(digits.length, OTP_LENGTH) - 1;
-    if (lastFilled >= 0) focusOtpIndex(lastFilled);
-  };
-
-  const springy: Transition = prefersReducedMotion
-    ? { duration: 0 }
-    : {
-        duration: 0.45,
-        ease: [0.2, 0.8, 0.2, 1] as [number, number, number, number],
-      };
-
-  const containerVariants: Variants = {
-    hidden: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 18 },
-    show: prefersReducedMotion
-      ? { opacity: 1 }
-      : { opacity: 1, y: 0, transition: springy },
-  };
-
-  const stepVariants: Variants = {
-    initial: prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 10 },
-    animate: prefersReducedMotion
-      ? { opacity: 1 }
-      : { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
-    exit: prefersReducedMotion
-      ? { opacity: 0 }
-      : { opacity: 0, y: -8, transition: { duration: 0.18, ease: "easeIn" } },
+    1: !!otp_session_token,
+    2: !!registration_token,
+    3: false,
   };
 
   const maxAllowedStep: Step = registration_token
@@ -250,808 +54,167 @@ function Profile() {
       ? 2
       : 1;
 
-  // in your component:
-
-  const stepLabels: Record<Step, string> = {
-    1: "شماره موبایل",
-    2: "کد تایید",
-    3: "مشخصات",
-  };
-
   useEffect(() => {
     setStep(maxAllowedStep);
   }, [maxAllowedStep]);
 
+  const goToStep = (target: Step) => {
+    if (target <= maxAllowedStep) setStep(target);
+  };
+
+  /* ---------------- PHONE ---------------- */
+
+  const [phone, setPhone] = useState("");
+
+  const isPhoneValid = phone.length === 11;
+
+  const handlePhoneSubmit = async () => {
+    await dispatch(sendNumberThunk(phone)).unwrap();
+  };
+
+  /* ---------------- OTP ---------------- */
+
+  const {
+    otp,
+    otpRefs,
+    isComplete: isOtpComplete,
+    handleChange,
+    handleKeyDown,
+    handlePaste,
+  } = useOtp(6);
+
+  const handleOtpSubmit = async () => {
+    const code = otp.join("");
+
+    await dispatch(
+      sendOtpThunk({
+        otp_session_token,
+        code,
+      }),
+    ).unwrap();
+  };
+
+  /* ---------------- SIGNUP VALUES ---------------- */
+
+  const [signupValues, setSignupValues] = useState<SignupValues>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  /* ---------------- VALIDATION ---------------- */
+
+  const {
+    normalizedEmail,
+    isEmailValid,
+    isPasswordValid,
+    doPasswordsMatch,
+    isPersonalInfoValid,
+  } = useSignupValidation({
+    mode,
+    clientType,
+    firstName: signupValues.firstName,
+    lastName: signupValues.lastName,
+    email: signupValues.email,
+    password: signupValues.password,
+    confirmPassword: signupValues.confirmPassword,
+    role: clientType,
+  });
+
+  /* ---------------- COMPLETE REGISTER ---------------- */
+
+  const handleCompleteSignup = async () => {
+    await dispatch(
+      completeRegister({
+        registration_token,
+        first_name: signupValues.firstName,
+        last_name: signupValues.lastName,
+        email: normalizedEmail,
+        role: clientType,
+        password: signupValues.password,
+        confirm_password: signupValues.confirmPassword,
+      }),
+    ).unwrap();
+  };
+
+  /* ---------------- TOGGLE OPTIONS ---------------- */
+
+  const clientOptions = [
+    { label: "Customer", value: "Customer" as ClientType },
+    { label: "Agent", value: "Agent" as ClientType },
+  ];
+
+  const modeOptions = [
+    { label: "Login", value: "login" as Mode },
+    { label: "Signup", value: "signup" as Mode },
+  ];
+
+  /* ---------------- RENDER ---------------- */
+
   return (
-    <main
-      dir="rtl"
-      className="min-h-[calc(100vh-120px)] px-4 sm:px-6 lg:px-8 py-10 lg:py-14"
-    >
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div
-          className="absolute -top-40 left-1/2 h-140 w-140 -translate-x-1/2 rounded-full blur-3xl opacity-30"
-          style={{
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(99,102,241,0.55), rgba(0,0,0,0))",
-          }}
+    <div className="max-w-md mx-auto p-6 space-y-6">
+      {/* Client Type */}
+      <Toggle
+        value={clientType}
+        onChange={setClientType}
+        options={clientOptions}
+      />
+
+      {/* Mode */}
+      <Toggle value={mode} onChange={setMode} options={modeOptions} />
+
+      {/* Step Header */}
+      <h2 className="text-xl font-semibold text-center">
+        Account Verification
+      </h2>
+
+      {/* Step Navigation */}
+      <StepNavigation
+        steps={steps}
+        currentStep={step}
+        completion={stepCompletion}
+        labels={stepLabels}
+        onStepClick={goToStep}
+      />
+
+      {/* STEP 1 */}
+      {step === 1 && (
+        <PhoneStep
+          phone={phone}
+          setPhone={setPhone}
+          isValid={isPhoneValid}
+          loading={loading}
+          onSubmit={handlePhoneSubmit}
         />
-        <div
-          className="absolute -bottom-56 -right-35 h-155 w-155 rounded-full blur-3xl opacity-25"
-          style={{
-            background:
-              "radial-gradient(circle at 40% 40%, rgba(16,185,129,0.45), rgba(0,0,0,0))",
-          }}
+      )}
+
+      {/* STEP 2 */}
+      {step === 2 && (
+        <OtpStep
+          otp={otp}
+          otpRefs={otpRefs}
+          isComplete={isOtpComplete}
+          loading={loading}
+          handleChange={handleChange}
+          handleKeyDown={handleKeyDown}
+          handlePaste={handlePaste}
+          onSubmit={handleOtpSubmit}
         />
-        <div className="absolute inset-0 bg-linear-to-b from-black/0 via-black/0 to-black/40" />
-      </div>
+      )}
 
-      <section className="mx-auto w-full max-w-2xl lg:max-w-3xl">
-        <header className="mb-8 lg:mb-10">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
-            ورود / ثبت نام
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-slate-300 max-w-2xl leading-7">
-            حساب کاربری خود را بسازید یا وارد شوید.
-          </p>
-        </header>
-
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="
-            rounded-[28px] border border-white/10
-            bg-slate-950/65 backdrop-blur-2xl
-            shadow-[0_30px_100px_rgba(0,0,0,0.6)]
-            overflow-hidden
-          "
-        >
-          <div className="p-5 sm:p-7 lg:p-8">
-            <div className="mb-7 lg:mb-8 flex flex-col gap-4 lg:gap-5">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="text-sm sm:text-base font-semibold text-slate-100">
-                  نوع کاربر
-                </div>
-
-                <div
-                  className="
-                    inline-flex w-full sm:w-auto justify-between sm:justify-start
-                    rounded-2xl border border-white/10 bg-white/5 p-1
-                    shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
-                  "
-                >
-                  <button
-                    type="button"
-                    onClick={() => setClientTypeSafe("customer")}
-                    className={`
-                      relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                      ${clientType === "customer" ? "text-white" : "text-slate-300 hover:text-white"}
-                    `}
-                    aria-pressed={clientType === "customer"}
-                  >
-                    {clientType === "customer" && (
-                      <span
-                        className="
-                          absolute inset-0 -z-10 rounded-xl
-                          bg-gradient-to-r from-indigo-500/30 via-indigo-500/15 to-emerald-500/20
-                          border border-white/10
-                          shadow-[0_10px_30px_rgba(99,102,241,0.18)]
-                        "
-                      />
-                    )}
-                    کاربر عادی
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setClientTypeSafe("Agent")}
-                    className={`
-                      relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                      ${clientType === "Agent" ? "text-white" : "text-slate-300 hover:text-white"}
-                    `}
-                    aria-pressed={clientType === "Agent"}
-                  >
-                    {clientType === "Agent" && (
-                      <span
-                        className="
-                          absolute inset-0 -z-10 rounded-xl
-                          bg-gradient-to-r from-indigo-500/30 via-indigo-500/15 to-emerald-500/20
-                          border border-white/10
-                          shadow-[0_10px_30px_rgba(16,185,129,0.14)]
-                        "
-                      />
-                    )}
-                    کاربر املاک
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="text-sm sm:text-base font-semibold text-slate-100">
-                  حالت
-                </div>
-
-                <div
-                  className="
-                    inline-flex w-full sm:w-auto justify-between sm:justify-start
-                    rounded-2xl border border-white/10 bg-white/5 p-1
-                    shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]
-                  "
-                >
-                  <button
-                    type="button"
-                    onClick={() => setModeSafe("login")}
-                    className={`
-                      relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                      ${mode === "login" ? "text-white" : "text-slate-300 hover:text-white"}
-                    `}
-                    aria-pressed={mode === "login"}
-                  >
-                    {mode === "login" && (
-                      <span className="absolute inset-0 -z-10 rounded-xl bg-white/10 border border-white/10" />
-                    )}
-                    ورود
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setModeSafe("signup")}
-                    className={`
-                      relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                      ${mode === "signup" ? "text-white" : "text-slate-300 hover:text-white"}
-                    `}
-                    aria-pressed={mode === "signup"}
-                  >
-                    {mode === "signup" && (
-                      <span className="absolute inset-0 -z-10 rounded-xl bg-white/10 border border-white/10" />
-                    )}
-                    ثبت نام
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {clientType === "customer" ? (
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                className="
-                  rounded-3xl border border-white/10 bg-white/5
-                  shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
-                  overflow-hidden
-                "
-              >
-                <div className="p-5 sm:p-6 border-b border-white/10">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div className="text-base sm:text-lg font-semibold text-white">
-                      {mode === "login"
-                        ? "ورود کاربر عادی"
-                        : "ثبت نام کاربر عادی"}
-                    </div>
-                    <div className="text-sm text-slate-300">
-                      مرحله {step} از {maxStep}
-                    </div>
-                  </div>
-
-                  <div
-                    className={`mt-4 grid gap-3 ${
-                      maxStep === 2
-                        ? "grid-cols-1 sm:grid-cols-2"
-                        : "grid-cols-1 sm:grid-cols-3"
-                    }`}
-                  >
-                    {steps.map((id) => {
-                      const isDone = stepCompletion[id];
-                      const isActive = step === id;
-                      const title = stepLabels[id];
-
-                      return (
-                        <motion.button
-                          key={id}
-                          type="button"
-                          onClick={() => goToStep(id)}
-                          whileHover={
-                            prefersReducedMotion ? undefined : { y: -1 }
-                          }
-                          whileTap={
-                            prefersReducedMotion ? undefined : { scale: 0.99 }
-                          }
-                          className="
-                            group relative overflow-hidden rounded-2xl
-                            border border-white/10 bg-white/5
-                            px-4 py-3 text-right transition
-                            hover:bg-white/7
-                            focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60
-                          "
-                        >
-                          <span
-                            className={`
-                              pointer-events-none absolute inset-x-0 -top-10 h-20
-                              blur-2xl transition-opacity duration-300
-                              ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-70"}
-                            `}
-                            style={{
-                              background:
-                                "radial-gradient(circle at 50% 65%, rgba(99,102,241,0.55), rgba(0,0,0,0))",
-                            }}
-                          />
-
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <span
-                                className={`
-                                  grid place-items-center h-9 w-9 rounded-xl text-sm font-semibold
-                                  transition
-                                  ${
-                                    isDone
-                                      ? "bg-emerald-500/20 text-emerald-200 border border-emerald-400/25"
-                                      : isActive
-                                        ? "bg-indigo-500/20 text-indigo-100 border border-indigo-400/25"
-                                        : "bg-white/5 text-slate-300 border border-white/10"
-                                  }
-                                `}
-                              >
-                                {id}
-                              </span>
-
-                              <span
-                                className={`
-                                  text-sm transition
-                                  ${isActive ? "text-white" : isDone ? "text-emerald-100" : "text-slate-300"}
-                                `}
-                              >
-                                {title}
-                              </span>
-                            </div>
-
-                            <span
-                              className={`
-                                text-xs px-2.5 py-1.5 rounded-xl border transition
-                                ${
-                                  isDone
-                                    ? "border-emerald-400/20 text-emerald-200 bg-emerald-500/10"
-                                    : isActive
-                                      ? "border-indigo-400/20 text-indigo-100 bg-indigo-500/10"
-                                      : "border-white/10 text-slate-300 bg-white/5"
-                                }
-                              `}
-                            >
-                              {isDone ? "انجام شد" : isActive ? "فعلی" : "بعدی"}
-                            </span>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="p-5 sm:p-6 lg:p-7">
-                  <div className="relative min-h-[320px] sm:min-h-[340px]">
-                    <AnimatePresence mode="wait">
-                      {step === 1 && (
-                        <motion.section
-                          key="step-1"
-                          variants={stepVariants}
-                          initial="initial"
-                          animate="animate"
-                          exit="exit"
-                        >
-                          <div className="mb-6">
-                            <div className="text-lg sm:text-xl font-semibold text-white">
-                              شماره موبایل
-                            </div>
-                            <div className="text-sm sm:text-base text-slate-300 mt-2 leading-7">
-                              شماره موبایل خود را وارد کنید تا ادامه دهید.
-                            </div>
-                          </div>
-
-                          <div className="max-w-xl">
-                            <label className="block text-sm sm:text-base text-slate-200 mb-2">
-                              شماره موبایل
-                            </label>
-
-                            <div
-                              className="
-                                flex items-center gap-3 rounded-2xl border border-white/10
-                                bg-slate-950/40 px-4 py-3
-                                shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                focus-within:ring-2 focus-within:ring-indigo-400/45
-                                transition
-                              "
-                            >
-                              <span className="text-slate-400 text-sm sm:text-base">
-                                +98
-                              </span>
-                              <input
-                                value={phone}
-                                onChange={(e) =>
-                                  setPhone(normalizeIranPhone(e.target.value))
-                                }
-                                className="
-                                  w-full bg-transparent outline-none
-                                  text-white placeholder:text-slate-500
-                                  py-2 text-sm sm:text-base
-                                "
-                                placeholder="مثلاً 09121234567"
-                                inputMode="numeric"
-                                autoComplete="tel"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                            <button
-                              type="button"
-                              className="
-                                inline-flex items-center justify-center
-                                rounded-2xl border border-white/10 bg-white/5
-                                px-6 py-3.5 text-sm sm:text-base text-slate-200
-                                hover:bg-white/10 transition
-                              "
-                            >
-                              انصراف
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  await dispatch(
-                                    sendNumberThunk(phone),
-                                  ).unwrap();
-                                  // no need to call goToStep here!
-                                } catch (err) {
-                                  console.error(err);
-                                }
-                              }}
-                              disabled={!isPhoneValidEnough || loading}
-                              className="
-                                relative inline-flex items-center justify-center overflow-hidden
-                                rounded-2xl px-7 py-3.5 text-sm sm:text-base font-semibold text-white
-                                border border-indigo-400/20
-                                bg-gradient-to-r from-indigo-500/35 via-indigo-500/15 to-emerald-500/20
-                                shadow-[0_18px_60px_rgba(99,102,241,0.20)]
-                                hover:shadow-[0_26px_85px_rgba(99,102,241,0.28)]
-                                transition
-                                focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60
-                                disabled:opacity-45 disabled:cursor-not-allowed
-                              "
-                            >
-                              ادامه
-                            </button>
-                          </div>
-                        </motion.section>
-                      )}
-
-                      {step === 2 && (
-                        <motion.section
-                          key="step-2"
-                          variants={stepVariants}
-                          initial="initial"
-                          animate="animate"
-                          exit="exit"
-                        >
-                          <div className="mb-6">
-                            <div className="text-lg sm:text-xl font-semibold text-white">
-                              کد تایید (OTP)
-                            </div>
-                            <div className="text-sm sm:text-base text-slate-300 mt-2 leading-7">
-                              کد {OTP_LENGTH} رقمی ارسال‌شده را وارد کنید.
-                            </div>
-                          </div>
-
-                          <div className="max-w-md">
-                            <div
-                              className="grid grid-cols-5 gap-2 sm:gap-3"
-                              dir="ltr"
-                            >
-                              {Array.from({ length: OTP_LENGTH }).map(
-                                (_, idx) => (
-                                  <input
-                                    key={idx}
-                                    ref={(el) => {
-                                      otpRefs.current[idx] = el;
-                                    }}
-                                    value={otp[idx]}
-                                    onChange={(e) =>
-                                      handleOtpChange(idx, e.target.value)
-                                    }
-                                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                                    onPaste={
-                                      idx === 0 ? handleOtpPaste : undefined
-                                    }
-                                    className="
-                                      h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
-                                      text-center text-white outline-none text-base sm:text-lg
-                                      shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                      focus:ring-2 focus:ring-indigo-400/45
-                                      transition
-                                    "
-                                    inputMode="numeric"
-                                    autoComplete={
-                                      idx === 0 ? "one-time-code" : "off"
-                                    }
-                                    aria-label={`OTP digit ${idx + 1}`}
-                                    maxLength={1}
-                                  />
-                                ),
-                              )}
-                            </div>
-
-                            <div className="mt-5 flex items-center justify-between text-sm text-slate-400">
-                              <button
-                                type="button"
-                                className="hover:text-white transition"
-                              >
-                                ارسال مجدد کد
-                              </button>
-                              <span>00:59</span>
-                            </div>
-                          </div>
-
-                          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                            <button
-                              type="button"
-                              onClick={() => goToStep(1)}
-                              className="
-                                inline-flex items-center justify-center
-                                rounded-2xl border border-white/10 bg-white/5
-                                px-6 py-3.5 text-sm sm:text-base text-slate-200
-                                hover:bg-white/10 transition
-                              "
-                            >
-                              مرحله قبل
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  const otpCode = otp.join("");
-
-                                  await dispatch(
-                                    sendOtpThunk({
-                                      otp_code: otpCode,
-                                      otp_session_token,
-                                    }),
-                                  ).unwrap();
-
-                                  if (mode === "signup") {
-                                    goToStep(3);
-                                  }
-                                } catch (err) {
-                                  console.error("OTP failed:", err);
-                                }
-                              }}
-                              disabled={!isOtpComplete || loading}
-                              className="
-                                relative inline-flex items-center justify-center overflow-hidden
-                                rounded-2xl px-7 py-3.5 text-sm sm:text-base font-semibold text-white
-                                border border-indigo-400/20
-                                bg-gradient-to-r from-indigo-500/35 via-indigo-500/15 to-emerald-500/20
-                                shadow-[0_18px_60px_rgba(99,102,241,0.20)]
-                                hover:shadow-[0_26px_85px_rgba(99,102,241,0.28)]
-                                transition
-                                focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60
-                                disabled:opacity-45 disabled:cursor-not-allowed
-                              "
-                            >
-                              {mode === "signup" ? "ادامه" : "تایید"}
-                            </button>
-                          </div>
-                        </motion.section>
-                      )}
-
-                      {step === 3 && mode === "signup" && (
-                        <motion.section
-                          key="step-3"
-                          variants={stepVariants}
-                          initial="initial"
-                          animate="animate"
-                          exit="exit"
-                        >
-                          <div className="mb-6">
-                            <div className="text-lg sm:text-xl font-semibold text-white">
-                              مشخصات
-                            </div>
-                            <div className="text-sm sm:text-base text-slate-300 mt-2 leading-7">
-                              لطفاً اطلاعات زیر را تکمیل کنید.
-                            </div>
-                          </div>
-
-                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
-                            <div>
-                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
-                                نام
-                              </label>
-                              <input
-                                value={firstName}
-                                onChange={(e) =>
-                                  setFirstName(normalizeName(e.target.value))
-                                }
-                                className="
-                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
-                                  px-4 text-sm sm:text-base text-white outline-none
-                                  placeholder:text-slate-500
-                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                  focus:ring-2 focus:ring-indigo-400/45
-                                  transition
-                                "
-                                placeholder="مثلاً علی"
-                                autoComplete="given-name"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
-                                نام خانوادگی
-                              </label>
-                              <input
-                                value={lastName}
-                                onChange={(e) =>
-                                  setLastName(normalizeName(e.target.value))
-                                }
-                                className="
-                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
-                                  px-4 text-sm sm:text-base text-white outline-none
-                                  placeholder:text-slate-500
-                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                  focus:ring-2 focus:ring-indigo-400/45
-                                  transition
-                                "
-                                placeholder="مثلاً محمدی"
-                                autoComplete="family-name"
-                              />
-                            </div>
-
-                            <div className="sm:col-span-2">
-                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
-                                ایمیل
-                              </label>
-                              <input
-                                value={email}
-                                onChange={(e) =>
-                                  setEmail(normalizeEmail(e.target.value))
-                                }
-                                className="
-                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
-                                  px-4 text-sm sm:text-base text-white outline-none
-                                  placeholder:text-slate-500
-                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                  focus:ring-2 focus:ring-indigo-400/45
-                                  transition
-                                "
-                                placeholder="example@email.com"
-                                inputMode="email"
-                                autoComplete="email"
-                              />
-                              {!email ? null : !isEmailValid ? (
-                                <div className="mt-2 text-xs text-amber-200/90 leading-6">
-                                  فرمت ایمیل درست نیست.
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
-                                رمز عبور
-                              </label>
-                              <input
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                type="password"
-                                className="
-                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
-                                  px-4 text-sm sm:text-base text-white outline-none
-                                  placeholder:text-slate-500
-                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                  focus:ring-2 focus:ring-indigo-400/45
-                                  transition
-                                "
-                                placeholder="حداقل ۸ کاراکتر"
-                                autoComplete="new-password"
-                              />
-                              {!password ? null : !isPasswordValid ? (
-                                <div className="mt-2 text-xs text-amber-200/90 leading-6">
-                                  رمز عبور باید حداقل ۸ کاراکتر باشد.
-                                </div>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <label className="block text-sm sm:text-base text-slate-200 mb-2">
-                                تکرار رمز عبور
-                              </label>
-                              <input
-                                value={confirmPassword}
-                                onChange={(e) =>
-                                  setConfirmPassword(e.target.value)
-                                }
-                                type="password"
-                                className="
-                                  w-full h-12 sm:h-14 rounded-2xl border border-white/10 bg-slate-950/40
-                                  px-4 text-sm sm:text-base text-white outline-none
-                                  placeholder:text-slate-500
-                                  shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                  focus:ring-2 focus:ring-indigo-400/45
-                                  transition
-                                "
-                                placeholder="دوباره وارد کنید"
-                                autoComplete="new-password"
-                              />
-                              {!confirmPassword ? null : !doPasswordsMatch ? (
-                                <div className="mt-2 text-xs text-amber-200/90 leading-6">
-                                  رمز عبور و تکرار آن یکسان نیستند.
-                                </div>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                            <button
-                              type="button"
-                              onClick={() => goToStep(2)}
-                              className="
-                                inline-flex items-center justify-center
-                                rounded-2xl border border-white/10 bg-white/5
-                                px-6 py-3.5 text-sm sm:text-base text-slate-200
-                                hover:bg-white/10 transition
-                              "
-                            >
-                              مرحله قبل
-                            </button>
-
-                            <button
-                              type="submit"
-                              // disabled={!isPersonalInfoValid}
-                              onClick={async () => {
-                                try {
-                                  await dispatch(
-                                    completeRegister({
-                                      registration_token,
-                                      first_name: firstName,
-                                      last_name: lastName,
-                                      email,
-                                      role: apiRole,
-                                      password,
-                                      confirm_password: confirmPassword,
-                                    }),
-                                  ).unwrap();
-                                } catch (err) {
-                                  console.error("complete failed:", err);
-                                }
-                              }}
-                              className="
-                                relative inline-flex items-center justify-center overflow-hidden
-                                rounded-2xl px-7 py-3.5 text-sm sm:text-base font-semibold text-white
-                                border border-emerald-400/20
-                                bg-gradient-to-r from-emerald-500/25 via-indigo-500/10 to-emerald-500/20
-                                shadow-[0_18px_60px_rgba(16,185,129,0.16)]
-                                hover:shadow-[0_26px_85px_rgba(16,185,129,0.22)]
-                                transition
-                                focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60
-                                disabled:opacity-45 disabled:cursor-not-allowed
-                              "
-                            >
-                              تکمیل ثبت نام
-                            </button>
-                          </div>
-                        </motion.section>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </form>
-            ) : (
-              <div
-                className="
-                  rounded-3xl border border-white/10 bg-white/5
-                  shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]
-                  overflow-hidden
-                "
-              >
-                <div className="p-5 sm:p-6 border-b border-white/10">
-                  <div className="text-base sm:text-lg font-semibold text-white">
-                    {mode === "login"
-                      ? "ورود کاربر املاک"
-                      : "ثبت نام کاربر املاک"}
-                  </div>
-                  <div className="text-sm sm:text-base text-slate-300 mt-2 leading-7 max-w-2xl">
-                    فعلاً فقط گزینه‌ها نمایش داده می‌شوند (بدون ورودی).
-                  </div>
-                </div>
-
-                <div className="p-5 sm:p-6 lg:p-7">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[
-                      {
-                        title: "مشاور املاک",
-                        desc: "مناسب برای مشاوران و بنگاه‌ها",
-                        tone: "indigo" as const,
-                      },
-                      {
-                        title: "سازنده / توسعه‌دهنده",
-                        desc: "مناسب برای پروژه‌های نوساز",
-                        tone: "emerald" as const,
-                      },
-                      {
-                        title: "مدیر مجموعه",
-                        desc: "مدیریت چند کاربر و چند شعبه",
-                        tone: "indigo" as const,
-                      },
-                      {
-                        title: "مالک (حقیقی/حقوقی)",
-                        desc: "ثبت و مدیریت فایل‌های ملک",
-                        tone: "emerald" as const,
-                      },
-                    ].map((card) => (
-                      <motion.button
-                        key={card.title}
-                        type="button"
-                        whileHover={
-                          prefersReducedMotion ? undefined : { y: -1 }
-                        }
-                        whileTap={
-                          prefersReducedMotion ? undefined : { scale: 0.99 }
-                        }
-                        className="
-                          group relative overflow-hidden rounded-2xl border border-white/10
-                          bg-slate-950/35 px-5 py-5 text-right
-                          hover:bg-white/7 transition
-                          focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20
-                        "
-                      >
-                        <div className="text-base font-semibold text-white">
-                          {card.title}
-                        </div>
-                        <div className="mt-2 text-sm text-slate-300 leading-7">
-                          {card.desc}
-                        </div>
-
-                        <span
-                          className="pointer-events-none absolute inset-x-0 -bottom-12 h-28 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-2xl"
-                          style={{
-                            background:
-                              card.tone === "emerald"
-                                ? "radial-gradient(circle at 50% 30%, rgba(16,185,129,0.40), rgba(0,0,0,0))"
-                                : "radial-gradient(circle at 50% 30%, rgba(99,102,241,0.45), rgba(0,0,0,0))",
-                          }}
-                        />
-                      </motion.button>
-                    ))}
-                  </div>
-
-                  <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                    <button
-                      type="button"
-                      className="
-                        inline-flex items-center justify-center
-                        rounded-2xl border border-white/10 bg-white/5
-                        px-6 py-3.5 text-sm sm:text-base text-slate-200
-                        hover:bg-white/10 transition
-                      "
-                    >
-                      بازگشت
-                    </button>
-
-                    <button
-                      type="button"
-                      className="
-                        inline-flex items-center justify-center
-                        rounded-2xl border border-white/10 bg-white/5
-                        px-6 py-3.5 text-sm sm:text-base text-slate-200
-                        hover:bg-white/10 transition
-                      "
-                    >
-                      ادامه (بعداً)
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </section>
-    </main>
+      {/* STEP 3 */}
+      {step === 3 && (
+        <PersonalInfoStep
+          values={signupValues}
+          setValues={setSignupValues}
+          isValid={isPersonalInfoValid}
+          loading={loading}
+          onSubmit={handleCompleteSignup}
+        />
+      )}
+    </div>
   );
 }
 
