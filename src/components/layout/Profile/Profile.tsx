@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { sendNumberThunk } from "../../../redux/thunks/sendNumberThunk";
 import { sendOtpThunk } from "../../../redux/thunks/sendOtpThunk";
+import { completeRegister } from "../../../redux/thunks/completeRegisterThunk";
 import type { AppDispatch } from "../../../redux/store";
 import {
   AnimatePresence,
@@ -11,10 +12,10 @@ import {
   type Transition,
 } from "motion/react";
 
-type ClientType = "normal" | "estate";
+type ClientType = "customer" | "Agent";
 type Mode = "login" | "signup";
 type Step = 1 | 2 | 3;
-type NormalUserRole = "buyer" | "seller" | "renter" | "owner";
+type NormalUserRole = "customer";
 
 const OTP_LENGTH = 5;
 
@@ -32,7 +33,7 @@ function Profile() {
 
   const prefersReducedMotion = useReducedMotion();
 
-  const [clientType, setClientType] = useState<ClientType>("normal");
+  const [clientType, setClientType] = useState<ClientType>("customer");
   const [mode, setMode] = useState<Mode>("login");
 
   const [step, setStep] = useState<Step>(1);
@@ -41,7 +42,9 @@ function Profile() {
   const [otp, setOtp] = useState<string[]>(
     Array.from({ length: OTP_LENGTH }, () => ""),
   );
-  const [role, setRole] = useState<NormalUserRole | "">("");
+  const apiRole = clientType;
+
+  const [role, setRole] = useState("");
   const [firstName, setFirstName] = useState<string>("");
   const [lastName, setLastName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -71,7 +74,7 @@ function Profile() {
 
   const isPersonalInfoValid =
     mode === "signup" &&
-    clientType === "normal" &&
+    clientType === "customer" &&
     firstName.trim().length >= 2 &&
     lastName.trim().length >= 2 &&
     isEmailValid &&
@@ -87,12 +90,12 @@ function Profile() {
 
   const flowConfig = {
     login: {
-      normal: [1, 2],
-      estate: [1, 2],
+      customer: [1, 2],
+      Agent: [1, 2],
     },
     signup: {
-      normal: [1, 2, 3],
-      estate: [1, 2, 3], // later estate form
+      customer: [1, 2, 3],
+      Agent: [1, 2, 3], // later estate form
     },
   };
 
@@ -107,7 +110,7 @@ function Profile() {
   const setClientTypeSafe = (next: ClientType) => {
     setClientType(next);
 
-    if (next !== "normal") {
+    if (next !== "customer") {
       setPhone("");
       setOtp(Array.from({ length: OTP_LENGTH }, () => ""));
       setRole("");
@@ -319,14 +322,14 @@ function Profile() {
                 >
                   <button
                     type="button"
-                    onClick={() => setClientTypeSafe("normal")}
+                    onClick={() => setClientTypeSafe("customer")}
                     className={`
                       relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                      ${clientType === "normal" ? "text-white" : "text-slate-300 hover:text-white"}
+                      ${clientType === "customer" ? "text-white" : "text-slate-300 hover:text-white"}
                     `}
-                    aria-pressed={clientType === "normal"}
+                    aria-pressed={clientType === "customer"}
                   >
-                    {clientType === "normal" && (
+                    {clientType === "customer" && (
                       <span
                         className="
                           absolute inset-0 -z-10 rounded-xl
@@ -341,14 +344,14 @@ function Profile() {
 
                   <button
                     type="button"
-                    onClick={() => setClientTypeSafe("estate")}
+                    onClick={() => setClientTypeSafe("Agent")}
                     className={`
                       relative flex-1 sm:flex-none px-5 py-2.5 text-sm sm:text-base rounded-xl transition-all
-                      ${clientType === "estate" ? "text-white" : "text-slate-300 hover:text-white"}
+                      ${clientType === "Agent" ? "text-white" : "text-slate-300 hover:text-white"}
                     `}
-                    aria-pressed={clientType === "estate"}
+                    aria-pressed={clientType === "Agent"}
                   >
-                    {clientType === "estate" && (
+                    {clientType === "Agent" && (
                       <span
                         className="
                           absolute inset-0 -z-10 rounded-xl
@@ -408,7 +411,7 @@ function Profile() {
               </div>
             </div>
 
-            {clientType === "normal" ? (
+            {clientType === "customer" ? (
               <form
                 onSubmit={(e) => e.preventDefault()}
                 className="
@@ -899,7 +902,24 @@ function Profile() {
 
                             <button
                               type="submit"
-                              disabled={!isPersonalInfoValid}
+                              // disabled={!isPersonalInfoValid}
+                              onClick={async () => {
+                                try {
+                                  await dispatch(
+                                    completeRegister({
+                                      registration_token,
+                                      first_name: firstName,
+                                      last_name: lastName,
+                                      email,
+                                      role: apiRole,
+                                      password,
+                                      confirm_password: confirmPassword,
+                                    }),
+                                  ).unwrap();
+                                } catch (err) {
+                                  console.error("complete failed:", err);
+                                }
+                              }}
                               className="
                                 relative inline-flex items-center justify-center overflow-hidden
                                 rounded-2xl px-7 py-3.5 text-sm sm:text-base font-semibold text-white

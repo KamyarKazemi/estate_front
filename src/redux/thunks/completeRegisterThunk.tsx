@@ -8,7 +8,7 @@ interface VerifyInfo {
   first_name: "string" | null;
   last_name: "string" | null;
   email: "string" | null;
-  role: "string" | null;
+  role: "Customer" | "Agent" | null;
   password: "string" | null;
   confirm_password: string | null;
 }
