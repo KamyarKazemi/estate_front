@@ -1,96 +1,139 @@
-import { useRef, useState } from "react";
-import type { KeyboardEvent, ClipboardEvent } from "react";
+import { useCallback, useRef, useState } from "react";
+import type { ClipboardEvent, KeyboardEvent } from "react";
 
 export function useOtp(length: number) {
   const [otp, setOtp] = useState<string[]>(Array.from({ length }, () => ""));
 
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
-  const focusOtpIndex = (idx: number) => {
+  const focusOtpIndex = useCallback((idx: number) => {
     const el = otpRefs.current[idx];
     el?.focus();
     el?.select?.();
-  };
+  }, []);
 
-  const setOtpAt = (idx: number, value: string) => {
+  const sanitizeDigit = useCallback((value: string) => {
+    return value.replace(/\D/g, "").slice(-1);
+  }, []);
+
+  const setOtpAt = useCallback((idx: number, value: string) => {
     setOtp((prev) => {
       const next = [...prev];
       next[idx] = value;
       return next;
     });
-  };
+  }, []);
 
-  const handleChange = (idx: number, value: string) => {
-    const v = value.replace(/[^\d]/g, "");
+  const resetOtp = useCallback(() => {
+    setOtp(Array.from({ length }, () => ""));
+    focusOtpIndex(0);
+  }, [focusOtpIndex, length]);
 
-    if (!v) {
-      setOtpAt(idx, "");
-      return;
-    }
+  const setOtpFromString = useCallback(
+    (value: string) => {
+      const digits = value.replace(/\D/g, "").slice(0, length);
+      const next = Array.from({ length }, (_, i) => digits[i] ?? "");
+      setOtp(next);
 
-    const digit = v.slice(-1);
-    setOtpAt(idx, digit);
+      if (!digits.length) {
+        focusOtpIndex(0);
+        return;
+      }
 
-    if (idx < length - 1) {
-      focusOtpIndex(idx + 1);
-    }
-  };
+      const focusIndex = Math.min(digits.length, length) - 1;
+      focusOtpIndex(focusIndex);
+    },
+    [focusOtpIndex, length],
+  );
 
-  const handleKeyDown = (idx: number, e: KeyboardEvent<HTMLInputElement>) => {
-    const key = e.key;
+  const handleChange = useCallback(
+    (idx: number, value: string) => {
+      const digit = sanitizeDigit(value);
 
-    if (key === "Backspace") {
-      if (otp[idx]) {
-        e.preventDefault();
+      if (!digit) {
         setOtpAt(idx, "");
         return;
       }
 
-      if (idx > 0) {
-        e.preventDefault();
-        setOtpAt(idx - 1, "");
-        focusOtpIndex(idx - 1);
+      setOtpAt(idx, digit);
+
+      if (idx < length - 1) {
+        focusOtpIndex(idx + 1);
+      }
+    },
+    [focusOtpIndex, length, sanitizeDigit, setOtpAt],
+  );
+
+  const handleKeyDown = useCallback(
+    (idx: number, e: KeyboardEvent<HTMLInputElement>) => {
+      const key = e.key;
+
+      if (key === "Backspace") {
+        if (otp[idx]) {
+          e.preventDefault();
+          setOtpAt(idx, "");
+          return;
+        }
+
+        if (idx > 0) {
+          e.preventDefault();
+          setOtpAt(idx - 1, "");
+          focusOtpIndex(idx - 1);
+        }
+
+        return;
       }
 
-      return;
-    }
+      if (key === "ArrowLeft") {
+        e.preventDefault();
+        if (idx > 0) focusOtpIndex(idx - 1);
+        return;
+      }
 
-    if (key === "ArrowLeft") {
+      if (key === "ArrowRight") {
+        e.preventDefault();
+        if (idx < length - 1) focusOtpIndex(idx + 1);
+        return;
+      }
+
+      if (key === "Home") {
+        e.preventDefault();
+        focusOtpIndex(0);
+        return;
+      }
+
+      if (key === "End") {
+        e.preventDefault();
+        focusOtpIndex(length - 1);
+        return;
+      }
+
+      if (key.length === 1 && !/^\d$/.test(key)) {
+        e.preventDefault();
+      }
+    },
+    [focusOtpIndex, length, otp, setOtpAt],
+  );
+
+  const handlePaste = useCallback(
+    (e: ClipboardEvent<HTMLInputElement>) => {
+      const text = e.clipboardData.getData("text");
+      const digits = text.replace(/\D/g, "").slice(0, length);
+
+      if (!digits) return;
+
       e.preventDefault();
-      if (idx > 0) focusOtpIndex(idx - 1);
-      return;
-    }
 
-    if (key === "ArrowRight") {
-      e.preventDefault();
-      if (idx < length - 1) focusOtpIndex(idx + 1);
-      return;
-    }
+      const next = Array.from({ length }, (_, i) => digits[i] ?? "");
+      setOtp(next);
 
-    if (key.length === 1 && !/^\d$/.test(key)) {
-      e.preventDefault();
-    }
-  };
+      const lastFilledIndex = Math.min(digits.length, length) - 1;
+      focusOtpIndex(lastFilledIndex);
+    },
+    [focusOtpIndex, length],
+  );
 
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
-    const text = e.clipboardData.getData("text");
-    const digits = text.replace(/[^\d]/g, "").slice(0, length);
-
-    if (!digits) return;
-
-    e.preventDefault();
-
-    const next = Array.from({ length }, (_, i) => digits[i] ?? "");
-    setOtp(next);
-
-    const lastFilled = Math.min(digits.length, length) - 1;
-
-    if (lastFilled >= 0) {
-      focusOtpIndex(lastFilled);
-    }
-  };
-
-  const isComplete = otp.every((d) => d.length === 1 && /^\d$/.test(d));
+  const isComplete = otp.every((digit) => /^\d$/.test(digit));
 
   return {
     otp,
@@ -99,6 +142,7 @@ export function useOtp(length: number) {
     handleChange,
     handleKeyDown,
     handlePaste,
-    setOtp,
+    resetOtp,
+    setOtpFromString,
   };
 }

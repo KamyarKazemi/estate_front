@@ -16,10 +16,10 @@ export function StepNavigation({
   onStepClick,
 }: StepNavigationProps) {
   return (
-    <div className="flex items-center justify-between mb-8">
+    <div className="flex items-center justify-between gap-2 sm:gap-4">
       {steps.map((step, index) => {
-        const isActive = step === currentStep;
-        const isCompleted = completion[step];
+        const active = step === currentStep;
+        const done = completion[step];
 
         return (
           <div key={step} className="flex items-center flex-1">
@@ -28,13 +28,14 @@ export function StepNavigation({
               onClick={() => onStepClick(step)}
               className={`
                 flex items-center justify-center
-                w-10 h-10 rounded-full border transition
+                w-10 h-10 rounded-full text-sm font-semibold
+                transition-all duration-200
                 ${
-                  isCompleted
-                    ? "bg-green-500 text-white border-green-500"
-                    : isActive
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-500 border-gray-300"
+                  done
+                    ? "bg-emerald-500 text-white"
+                    : active
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-800 text-slate-400 border border-slate-700"
                 }
               `}
             >
@@ -43,15 +44,15 @@ export function StepNavigation({
 
             <span
               className={`
-                ml-2 text-sm font-medium
-                ${isActive ? "text-blue-600" : "text-gray-500"}
+                ml-2 text-xs sm:text-sm font-medium
+                ${active ? "text-white" : "text-slate-400"}
               `}
             >
               {labels[step]}
             </span>
 
             {index < steps.length - 1 && (
-              <div className="flex-1 h-0.5 bg-gray-200 mx-4" />
+              <div className="flex-1 h-px bg-slate-700 mx-3" />
             )}
           </div>
         );

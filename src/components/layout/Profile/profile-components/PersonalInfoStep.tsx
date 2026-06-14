@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "motion/react";
 import type { SignupValues } from "../types/types";
 
 type PersonalInfoStepProps = {
@@ -6,14 +7,40 @@ type PersonalInfoStepProps = {
   setValues: React.Dispatch<React.SetStateAction<SignupValues>>;
   isValid: boolean;
   loading: boolean;
+  skeletonLoading?: boolean;
   onSubmit: () => Promise<void>;
 };
+
+function Spinner() {
+  return (
+    <motion.span
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 0.9, ease: "linear" }}
+      className="inline-block h-5 w-5 rounded-full border-2 border-white/30 border-t-white"
+    />
+  );
+}
+
+function PersonalInfoStepSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      {Array.from({ length: 5 }).map((_, idx) => (
+        <div key={idx} className="space-y-2">
+          <div className="h-4 w-28 rounded bg-slate-800" />
+          <div className="h-12 w-full rounded-lg bg-slate-800" />
+        </div>
+      ))}
+      <div className="h-12 w-full rounded-lg bg-slate-800" />
+    </div>
+  );
+}
 
 export function PersonalInfoStep({
   values,
   setValues,
   isValid,
   loading,
+  skeletonLoading = false,
   onSubmit,
 }: PersonalInfoStepProps) {
   const handleChange =
@@ -27,86 +54,130 @@ export function PersonalInfoStep({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid || loading) return;
-
     await onSubmit();
   };
 
+  if (skeletonLoading) {
+    return <PersonalInfoStepSkeleton />;
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* First Name */}
+    <motion.form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+    >
       <div>
-        <label className="block text-sm font-medium mb-1">First Name</label>
+        <label className="mb-2 block text-sm font-medium text-white">نام</label>
         <input
           type="text"
           value={values.firstName}
           onChange={handleChange("firstName")}
-          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          placeholder="John"
+          dir="rtl"
+          className="
+            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
+            text-right text-white placeholder-slate-500 outline-none transition
+            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
+          "
+          placeholder="نام"
         />
       </div>
 
-      {/* Last Name */}
       <div>
-        <label className="block text-sm font-medium mb-1">Last Name</label>
+        <label className="mb-2 block text-sm font-medium text-white">
+          نام خانوادگی
+        </label>
         <input
           type="text"
           value={values.lastName}
           onChange={handleChange("lastName")}
-          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          placeholder="Doe"
+          dir="rtl"
+          className="
+            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
+            text-right text-white placeholder-slate-500 outline-none transition
+            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
+          "
+          placeholder="نام خانوادگی"
         />
       </div>
 
-      {/* Email */}
       <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
+        <label className="mb-2 block text-sm font-medium text-white">
+          ایمیل
+        </label>
         <input
           type="email"
           value={values.email}
           onChange={handleChange("email")}
-          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          placeholder="john@example.com"
+          dir="ltr"
+          className="
+            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
+            text-left text-white placeholder-slate-500 outline-none transition
+            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
+          "
+          placeholder="example@email.com"
         />
       </div>
 
-      {/* Password */}
       <div>
-        <label className="block text-sm font-medium mb-1">Password</label>
+        <label className="mb-2 block text-sm font-medium text-white">
+          رمز عبور
+        </label>
         <input
           type="password"
           value={values.password}
           onChange={handleChange("password")}
-          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          dir="ltr"
+          className="
+            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
+            text-left text-white placeholder-slate-500 outline-none transition
+            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
+          "
           placeholder="••••••••"
         />
       </div>
 
-      {/* Confirm Password */}
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Confirm Password
+        <label className="mb-2 block text-sm font-medium text-white">
+          تکرار رمز عبور
         </label>
         <input
           type="password"
           value={values.confirmPassword}
           onChange={handleChange("confirmPassword")}
-          className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          dir="ltr"
+          className="
+            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
+            text-left text-white placeholder-slate-500 outline-none transition
+            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
+          "
           placeholder="••••••••"
         />
       </div>
 
-      {/* Submit Button */}
-      <button
+      <motion.button
         type="submit"
         disabled={!isValid || loading}
-        className={`w-full py-2 rounded-lg font-semibold transition ${
-          !isValid || loading
-            ? "bg-gray-300 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-        }`}
+        whileHover={!loading && isValid ? { scale: 1.01 } : {}}
+        whileTap={!loading && isValid ? { scale: 0.99 } : {}}
+        className="
+          flex h-12 w-full items-center justify-center gap-2 rounded-lg
+          bg-indigo-600 font-semibold text-white transition hover:bg-indigo-500
+          disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400
+        "
       >
-        {loading ? "Creating Account..." : "Complete Registration"}
-      </button>
-    </form>
+        {loading ? (
+          <>
+            <Spinner />
+            <span>در حال تکمیل ثبت‌نام...</span>
+          </>
+        ) : (
+          "تکمیل ثبت‌نام"
+        )}
+      </motion.button>
+    </motion.form>
   );
 }

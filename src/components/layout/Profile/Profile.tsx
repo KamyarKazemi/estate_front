@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { PhoneStep } from "./profile-components/PhoneStep";
@@ -15,31 +15,37 @@ import type { ClientType, Mode, Step, SignupValues } from "./types/types";
 import { sendNumberThunk } from "../../../redux/thunks/sendNumberThunk";
 import { sendOtpThunk } from "../../../redux/thunks/sendOtpThunk";
 import { completeRegister } from "../../../redux/thunks/completeRegisterThunk";
+import { resetAuth } from "../../../redux/slices/authSlice";
 
 import type { AppDispatch, RootState } from "../../../redux/store";
 
 function Profile() {
   const dispatch = useDispatch<AppDispatch>();
 
-  const { otp_session_token, registration_token, loading } = useSelector(
-    (state: RootState) => state.auth,
-  );
+  const {
+    otp_session_token,
+    registration_token,
+    sendingPhone,
+    verifyingOtp,
+    completingRegister,
+    bootstrappingProfile,
+  } = useSelector((state: RootState) => state.auth);
 
-  /* ---------------- CLIENT + MODE ---------------- */
+  /* ---------------- نوع کاربر + حالت ---------------- */
 
   const [clientType, setClientType] = useState<ClientType>("Customer");
   const [mode, setMode] = useState<Mode>("login");
 
-  /* ---------------- STEP ---------------- */
+  /* ---------------- مدیریت مراحل ---------------- */
 
   const [step, setStep] = useState<Step>(1);
 
   const steps: Step[] = [1, 2, 3];
 
   const stepLabels: Record<Step, string> = {
-    1: "Phone",
-    2: "Verification",
-    3: "Profile",
+    1: "شماره موبایل",
+    2: "کد تأیید",
+    3: "اطلاعات حساب",
   };
 
   const stepCompletion: Record<Step, boolean> = {
@@ -59,20 +65,24 @@ function Profile() {
   }, [maxAllowedStep]);
 
   const goToStep = (target: Step) => {
-    if (target <= maxAllowedStep) setStep(target);
+    if (target <= maxAllowedStep) {
+      setStep(target);
+    }
   };
 
-  /* ---------------- PHONE ---------------- */
+  /* ---------------- شماره موبایل ---------------- */
 
   const [phone, setPhone] = useState("");
 
-  const isPhoneValid = phone.length === 11;
+  const isPhoneValid = /^09\d{9}$/.test(phone);
 
   const handlePhoneSubmit = async () => {
+    if (!isPhoneValid || sendingPhone) return;
+
     await dispatch(sendNumberThunk(phone)).unwrap();
   };
 
-  /* ---------------- OTP ---------------- */
+  /* ---------------- کد تایید ---------------- */
 
   const {
     otp,
@@ -81,20 +91,23 @@ function Profile() {
     handleChange,
     handleKeyDown,
     handlePaste,
+    resetOtp,
   } = useOtp(6);
 
   const handleOtpSubmit = async () => {
-    const code = otp.join("");
+    if (!otp_session_token || !isOtpComplete || verifyingOtp) return;
+
+    const otp_code = otp.join("");
 
     await dispatch(
       sendOtpThunk({
         otp_session_token,
-        code,
+        otp_code,
       }),
     ).unwrap();
   };
 
-  /* ---------------- SIGNUP VALUES ---------------- */
+  /* ---------------- اطلاعات ثبت نام ---------------- */
 
   const [signupValues, setSignupValues] = useState<SignupValues>({
     firstName: "",
@@ -104,28 +117,18 @@ function Profile() {
     confirmPassword: "",
   });
 
-  /* ---------------- VALIDATION ---------------- */
+  /* ---------------- اعتبارسنجی ---------------- */
 
-  const {
-    normalizedEmail,
-    isEmailValid,
-    isPasswordValid,
-    doPasswordsMatch,
-    isPersonalInfoValid,
-  } = useSignupValidation({
-    mode,
-    clientType,
-    firstName: signupValues.firstName,
-    lastName: signupValues.lastName,
-    email: signupValues.email,
-    password: signupValues.password,
-    confirmPassword: signupValues.confirmPassword,
-    role: clientType,
-  });
+  const { normalizedEmail, isPersonalInfoValid } =
+    useSignupValidation(signupValues);
 
-  /* ---------------- COMPLETE REGISTER ---------------- */
+  /* ---------------- تکمیل ثبت نام ---------------- */
 
   const handleCompleteSignup = async () => {
+    if (!registration_token || !isPersonalInfoValid || completingRegister) {
+      return;
+    }
+
     await dispatch(
       completeRegister({
         registration_token,
@@ -139,82 +142,134 @@ function Profile() {
     ).unwrap();
   };
 
-  /* ---------------- TOGGLE OPTIONS ---------------- */
+  /* ---------------- ریست جریان احراز هویت هنگام تغییر حالت ---------------- */
+
+  const didMountRef = useRef(false);
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+
+    dispatch(resetAuth());
+    setStep(1);
+    setPhone("");
+    resetOtp();
+    setSignupValues({
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+  }, [mode, clientType, dispatch, resetOtp]);
+
+  /* ---------------- گزینه های تاگل ---------------- */
 
   const clientOptions = [
-    { label: "Customer", value: "Customer" as ClientType },
-    { label: "Agent", value: "Agent" as ClientType },
+    { label: "مشتری", value: "Customer" as ClientType },
+    { label: "مشاور", value: "Agent" as ClientType },
   ];
 
   const modeOptions = [
-    { label: "Login", value: "login" as Mode },
-    { label: "Signup", value: "signup" as Mode },
+    { label: "ورود", value: "login" as Mode },
+    { label: "ثبت نام", value: "signup" as Mode },
   ];
 
-  /* ---------------- RENDER ---------------- */
+  /* ---------------- متن هدر ---------------- */
+
+  const title = mode === "login" ? "ورود به حساب کاربری" : "ایجاد حساب کاربری";
+
+  const subtitle = clientType === "Customer" ? "پنل کاربران" : "پنل مشاوران";
+
+  /* ---------------- UI ---------------- */
 
   return (
-    <div className="max-w-md mx-auto p-6 space-y-6">
-      {/* Client Type */}
-      <Toggle
-        value={clientType}
-        onChange={setClientType}
-        options={clientOptions}
-      />
+    <main
+      dir="rtl"
+      className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-10"
+    >
+      <div className="w-full max-w-xl">
+        <div
+          className="
+            bg-slate-900/70 backdrop-blur-xl
+            border border-slate-700/50
+            rounded-2xl
+            shadow-2xl
+            p-6 sm:p-8
+            space-y-8
+          "
+        >
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <h1 className="text-2xl font-semibold text-white tracking-tight">
+              {title}
+            </h1>
+            <p className="text-sm text-slate-400">{subtitle}</p>
+          </div>
 
-      {/* Mode */}
-      <Toggle value={mode} onChange={setMode} options={modeOptions} />
+          {/* Toggles */}
+          <div className="space-y-4">
+            <Toggle
+              value={clientType}
+              onChange={setClientType}
+              options={clientOptions}
+            />
 
-      {/* Step Header */}
-      <h2 className="text-xl font-semibold text-center">
-        Account Verification
-      </h2>
+            <Toggle value={mode} onChange={setMode} options={modeOptions} />
+          </div>
 
-      {/* Step Navigation */}
-      <StepNavigation
-        steps={steps}
-        currentStep={step}
-        completion={stepCompletion}
-        labels={stepLabels}
-        onStepClick={goToStep}
-      />
+          {/* Step Navigation */}
+          <StepNavigation
+            steps={steps}
+            currentStep={step}
+            completion={stepCompletion}
+            labels={stepLabels}
+            onStepClick={goToStep}
+          />
 
-      {/* STEP 1 */}
-      {step === 1 && (
-        <PhoneStep
-          phone={phone}
-          setPhone={setPhone}
-          isValid={isPhoneValid}
-          loading={loading}
-          onSubmit={handlePhoneSubmit}
-        />
-      )}
+          {/* Step 1 */}
+          {step === 1 && (
+            <PhoneStep
+              phone={phone}
+              setPhone={setPhone}
+              isValid={isPhoneValid}
+              loading={sendingPhone}
+              skeletonLoading={bootstrappingProfile}
+              onSubmit={handlePhoneSubmit}
+            />
+          )}
 
-      {/* STEP 2 */}
-      {step === 2 && (
-        <OtpStep
-          otp={otp}
-          otpRefs={otpRefs}
-          isComplete={isOtpComplete}
-          loading={loading}
-          handleChange={handleChange}
-          handleKeyDown={handleKeyDown}
-          handlePaste={handlePaste}
-          onSubmit={handleOtpSubmit}
-        />
-      )}
+          {/* Step 2 */}
+          {step === 2 && (
+            <OtpStep
+              otp={otp}
+              otpRefs={otpRefs}
+              isComplete={isOtpComplete}
+              loading={verifyingOtp}
+              skeletonLoading={bootstrappingProfile}
+              handleChange={handleChange}
+              handleKeyDown={handleKeyDown}
+              handlePaste={handlePaste}
+              onSubmit={handleOtpSubmit}
+            />
+          )}
 
-      {/* STEP 3 */}
-      {step === 3 && (
-        <PersonalInfoStep
-          values={signupValues}
-          setValues={setSignupValues}
-          isValid={isPersonalInfoValid}
-          loading={loading}
-          onSubmit={handleCompleteSignup}
-        />
-      )}
-    </div>
+          {/* Step 3 */}
+          {step === 3 && (
+            <PersonalInfoStep
+              values={signupValues}
+              setValues={setSignupValues}
+              isValid={isPersonalInfoValid}
+              loading={completingRegister}
+              skeletonLoading={bootstrappingProfile}
+              onSubmit={handleCompleteSignup}
+            />
+          )}
+        </div>
+      </div>
+    </main>
   );
 }
 
