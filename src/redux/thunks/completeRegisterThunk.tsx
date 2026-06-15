@@ -8,7 +8,7 @@ export interface CompleteRegisterPayload {
   first_name: string;
   last_name: string;
   email: string;
-  role: "Customer" | "Agent";
+  role: "customer" | "agent";
   password: string;
   confirm_password: string;
 }

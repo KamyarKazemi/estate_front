@@ -6,7 +6,7 @@ export interface SignupValues {
   confirmPassword: string;
 }
 
-export type ClientType = "Customer" | "Agent";
+export type ClientType = "customer" | "agent";
 export type Mode = "login" | "signup";
 
 export type Step = 1 | 2 | 3;

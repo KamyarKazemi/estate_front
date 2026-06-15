@@ -36,7 +36,7 @@ function OtpStepSkeleton() {
       </div>
 
       <div className="flex justify-center gap-2">
-        {Array.from({ length: 6 }).map((_, idx) => (
+        {Array.from({ length: 5 }).map((_, idx) => (
           <div
             key={idx}
             className="h-12 w-12 rounded-lg bg-slate-800 sm:h-14 sm:w-14"

@@ -33,7 +33,7 @@ function Profile() {
 
   /* ---------------- نوع کاربر + حالت ---------------- */
 
-  const [clientType, setClientType] = useState<ClientType>("Customer");
+  const [clientType, setClientType] = useState<ClientType>("customer");
   const [mode, setMode] = useState<Mode>("login");
 
   /* ---------------- مدیریت مراحل ---------------- */
@@ -92,7 +92,7 @@ function Profile() {
     handleKeyDown,
     handlePaste,
     resetOtp,
-  } = useOtp(6);
+  } = useOtp(5);
 
   const handleOtpSubmit = async () => {
     if (!otp_session_token || !isOtpComplete || verifyingOtp) return;
@@ -168,8 +168,8 @@ function Profile() {
   /* ---------------- گزینه های تاگل ---------------- */
 
   const clientOptions = [
-    { label: "مشتری", value: "Customer" as ClientType },
-    { label: "مشاور", value: "Agent" as ClientType },
+    { label: "مشتری", value: "customer" as ClientType },
+    { label: "مشاور", value: "agent" as ClientType },
   ];
 
   const modeOptions = [
@@ -181,7 +181,7 @@ function Profile() {
 
   const title = mode === "login" ? "ورود به حساب کاربری" : "ایجاد حساب کاربری";
 
-  const subtitle = clientType === "Customer" ? "پنل کاربران" : "پنل مشاوران";
+  const subtitle = clientType === "customer" ? "پنل کاربران" : "پنل مشاوران";
 
   /* ---------------- UI ---------------- */
 
