@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const URL = import.meta.env.VITE_BACKEND_URL_REGISTER_SECOND;
+const URL = import.meta.env.VITE_BACKEND_URL_LOGIN_SECOND;
 
 interface VerifyPayload {
   otp_code: string;
@@ -9,13 +9,14 @@ interface VerifyPayload {
 }
 
 interface VerifyOtpResponse {
-  registration_token: string;
+  access: string;
+  refresh: string;
 }
 
 console.log("ENV:", import.meta.env);
 console.log("SECOND URL:", URL);
 
-export const sendOtpThunk = createAsyncThunk<
+export const sendOtpLoginThunk = createAsyncThunk<
   VerifyOtpResponse,
   VerifyPayload,
   { rejectValue: string }
@@ -26,12 +27,16 @@ export const sendOtpThunk = createAsyncThunk<
       otp_session_token,
     });
 
-    console.log("sendOtpThunk dispatched:", {
+    console.log("sendOtpLoginThunk dispatched:", {
       otp_code,
     });
 
+    console.log("ACCESS TOKEN:", response.data.access);
+    console.log("REFRESH TOKEN:", response.data.refresh);
+
     return {
-      registration_token: response.data.registration_token,
+      access: response.data.access,
+      refresh: response.data.refresh,
     };
   } catch (error: any) {
     return rejectWithValue(

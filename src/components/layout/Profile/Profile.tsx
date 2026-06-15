@@ -16,6 +16,8 @@ import { sendNumberThunk } from "../../../redux/thunks/sendNumberThunk";
 import { sendOtpThunk } from "../../../redux/thunks/sendOtpThunk";
 import { completeRegister } from "../../../redux/thunks/completeRegisterThunk";
 import { resetAuth } from "../../../redux/slices/authSlice";
+import { sendNumberLoginThunk } from "../../../redux/thunks/sendNumberLogin";
+import { sendOtpLoginThunk } from "../../../redux/thunks/sendOtpLogin";
 
 import type { AppDispatch, RootState } from "../../../redux/store";
 
@@ -40,7 +42,7 @@ function Profile() {
 
   const [step, setStep] = useState<Step>(1);
 
-  const steps: Step[] = [1, 2, 3];
+  const steps: Step[] = mode === "signup" ? [1, 2, 3] : [1, 2];
 
   const stepLabels: Record<Step, string> = {
     1: "شماره موبایل",
@@ -50,15 +52,17 @@ function Profile() {
 
   const stepCompletion: Record<Step, boolean> = {
     1: !!otp_session_token,
-    2: !!registration_token,
+    2: mode === "login" ? !!otp_session_token : !!registration_token,
     3: false,
   };
 
-  const maxAllowedStep: Step = registration_token
-    ? 3
-    : otp_session_token
-      ? 2
-      : 1;
+  const maxAllowedStep: Step = (() => {
+    if (mode === "login") {
+      return otp_session_token ? 2 : 1;
+    }
+
+    return registration_token ? 3 : otp_session_token ? 2 : 1;
+  })();
 
   useEffect(() => {
     setStep(maxAllowedStep);
@@ -79,7 +83,11 @@ function Profile() {
   const handlePhoneSubmit = async () => {
     if (!isPhoneValid || sendingPhone) return;
 
-    await dispatch(sendNumberThunk(phone)).unwrap();
+    if (mode === "login") {
+      await dispatch(sendNumberLoginThunk(phone)).unwrap();
+    } else {
+      await dispatch(sendNumberThunk(phone)).unwrap();
+    }
   };
 
   /* ---------------- کد تایید ---------------- */
@@ -99,6 +107,26 @@ function Profile() {
 
     const otp_code = otp.join("");
 
+    if (mode === "login") {
+      const result = await dispatch(
+        sendOtpLoginThunk({
+          otp_session_token,
+          otp_code,
+        }),
+      ).unwrap();
+
+      console.log("✅ Login success:", result);
+
+      // 👉 here you normally:
+      // - store access token
+      // - navigate to dashboard
+      // example:
+      // navigate("/dashboard")
+
+      return;
+    }
+
+    // signup flow
     await dispatch(
       sendOtpThunk({
         otp_session_token,
@@ -257,7 +285,7 @@ function Profile() {
           )}
 
           {/* Step 3 */}
-          {step === 3 && (
+          {mode === "signup" && step === 3 && (
             <PersonalInfoStep
               values={signupValues}
               setValues={setSignupValues}

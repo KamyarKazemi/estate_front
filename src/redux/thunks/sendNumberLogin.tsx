@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const URL = import.meta.env.VITE_BACKEND_URL_REGISTER_FIRST;
+const URL = import.meta.env.VITE_BACKEND_URL_LOGIN_FIRST;
 
 interface SendNumberResponse {
   phone_number: string;
@@ -11,7 +11,7 @@ interface SendNumberResponse {
 console.log("ENV:", import.meta.env);
 console.log("FIRST URL:", URL);
 
-export const sendNumberThunk = createAsyncThunk<
+export const sendNumberLoginThunk = createAsyncThunk<
   SendNumberResponse,
   string,
   { rejectValue: string }
@@ -21,7 +21,7 @@ export const sendNumberThunk = createAsyncThunk<
       phone_number,
     });
 
-    console.log("sendNumberThunk got:", {
+    console.log("sendNumberLoginThunk got:", {
       phone_number,
       otp_session_token: response.data.otp_session_token,
     });
