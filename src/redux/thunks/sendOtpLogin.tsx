@@ -9,8 +9,8 @@ interface VerifyPayload {
 }
 
 interface VerifyOtpResponse {
-  access: string;
-  refresh: string;
+  access_token: string;
+  refresh_token: string;
 }
 
 console.log("ENV:", import.meta.env);
@@ -35,8 +35,8 @@ export const sendOtpLoginThunk = createAsyncThunk<
     console.log("REFRESH TOKEN:", response.data.refresh);
 
     return {
-      access: response.data.access,
-      refresh: response.data.refresh,
+      access_token: response.data.access,
+      refresh_token: response.data.refresh,
     };
   } catch (error: any) {
     return rejectWithValue(
