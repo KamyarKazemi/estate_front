@@ -35,7 +35,7 @@ function Profile() {
 
   /* ---------------- نوع کاربر + حالت ---------------- */
 
-  const [clientType, setClientType] = useState<ClientType>("customer");
+  const [clientType, setClientType] = useState<ClientType>("CUSTOMER");
   const [mode, setMode] = useState<Mode>("login");
 
   /* ---------------- مدیریت مراحل ---------------- */
@@ -196,8 +196,8 @@ function Profile() {
   /* ---------------- گزینه های تاگل ---------------- */
 
   const clientOptions = [
-    { label: "مشتری", value: "customer" as ClientType },
-    { label: "مشاور", value: "agent" as ClientType },
+    { label: "مشتری", value: "CUSTOMER" as ClientType },
+    { label: "مشاور", value: "AGENT" as ClientType },
   ];
 
   const modeOptions = [
@@ -209,7 +209,7 @@ function Profile() {
 
   const title = mode === "login" ? "ورود به حساب کاربری" : "ایجاد حساب کاربری";
 
-  const subtitle = clientType === "customer" ? "پنل کاربران" : "پنل مشاوران";
+  const subtitle = clientType === "CUSTOMER" ? "پنل کاربران" : "پنل مشاوران";
 
   /* ---------------- UI ---------------- */
 
