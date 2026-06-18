@@ -17,7 +17,6 @@ interface DesktopNavProps {
 }
 
 export default function DesktopNav({
-  activeIndex,
   isDropdownClicked,
   dropdownWrapRef,
   setActiveIndex,

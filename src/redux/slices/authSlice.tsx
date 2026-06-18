@@ -26,6 +26,7 @@ const initialState: AuthState = {
   verifyingOtp: false,
   completingRegister: false,
   bootstrappingProfile: false,
+  loading: false,
 
   error: null,
 };

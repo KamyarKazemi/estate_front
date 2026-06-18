@@ -38,7 +38,6 @@ function PhoneStepSkeleton() {
 export function PhoneStep({
   phone,
   setPhone,
-  isValid,
   loading,
   skeletonLoading = false,
   onSubmit,
