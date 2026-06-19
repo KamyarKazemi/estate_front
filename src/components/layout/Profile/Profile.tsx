@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 import { PhoneStep } from "./profile-components/PhoneStep";
 import { OtpStep } from "./profile-components/OtpStep";
@@ -15,7 +16,7 @@ import type { ClientType, Mode, Step, SignupValues } from "./types/types";
 import { sendNumberThunk } from "../../../redux/thunks/sendNumberThunk";
 import { sendOtpThunk } from "../../../redux/thunks/sendOtpThunk";
 import { completeRegister } from "../../../redux/thunks/completeRegisterThunk";
-import { resetAuth } from "../../../redux/slices/authSlice";
+import { resetAuthFlow } from "../../../redux/slices/authSlice";
 import { sendNumberLoginThunk } from "../../../redux/thunks/sendNumberLogin";
 import { sendOtpLoginThunk } from "../../../redux/thunks/sendOtpLogin";
 
@@ -23,6 +24,7 @@ import type { AppDispatch, RootState } from "../../../redux/store";
 
 function Profile() {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
   const {
     otp_session_token,
@@ -117,11 +119,7 @@ function Profile() {
 
       console.log("✅ Login success:", result);
 
-      // 👉 here you normally:
-      // - store access token
-      // - navigate to dashboard
-      // example:
-      // navigate("/dashboard")
+      navigate("/dashboard");
 
       return;
     }
@@ -157,7 +155,7 @@ function Profile() {
       return;
     }
 
-    await dispatch(
+    const result = await dispatch(
       completeRegister({
         registration_token,
         first_name: signupValues.firstName,
@@ -168,6 +166,14 @@ function Profile() {
         confirm_password: signupValues.confirmPassword,
       }),
     ).unwrap();
+
+    if (result.access_token && result.user) {
+      navigate("/dashboard");
+      return;
+    }
+
+    setMode("login");
+    setStep(1);
   };
 
   /* ---------------- ریست جریان احراز هویت هنگام تغییر حالت ---------------- */
@@ -180,7 +186,7 @@ function Profile() {
       return;
     }
 
-    dispatch(resetAuth());
+    dispatch(resetAuthFlow());
     setStep(1);
     setPhone("");
     resetOtp();

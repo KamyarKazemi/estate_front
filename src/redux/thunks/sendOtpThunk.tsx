@@ -19,7 +19,7 @@ export const sendOtpThunk = createAsyncThunk<
   VerifyOtpResponse,
   VerifyPayload,
   { rejectValue: string }
->("otp/send", async ({ otp_code, otp_session_token }, { rejectWithValue }) => {
+>("register/verifyOtp", async ({ otp_code, otp_session_token }, { rejectWithValue }) => {
   try {
     const response = await axios.post(URL, {
       otp_code,

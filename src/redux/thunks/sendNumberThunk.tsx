@@ -15,7 +15,7 @@ export const sendNumberThunk = createAsyncThunk<
   SendNumberResponse,
   string,
   { rejectValue: string }
->("number/send", async (phone_number, { rejectWithValue }) => {
+>("register/sendNumber", async (phone_number, { rejectWithValue }) => {
   try {
     const response = await axios.post(URL, {
       phone_number,

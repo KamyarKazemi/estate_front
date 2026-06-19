@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Root from "./layout/Root";
 import Home from "./components/layout/main/Home";
 import Profile from "./components/layout/Profile/Profile";
+import Dashboard from "./components/layout/dashboard/Dashboard";
+import ProtectedRoute from "./components/layout/dashboard/ProtectedRoute";
 
 function App() {
   const router = createBrowserRouter([
@@ -16,6 +18,15 @@ function App() {
         {
           element: <Profile />,
           path: "/profile",
+        },
+        {
+          element: <ProtectedRoute />,
+          children: [
+            {
+              element: <Dashboard />,
+              path: "/dashboard",
+            },
+          ],
         },
       ],
     },

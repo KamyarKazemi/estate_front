@@ -26,7 +26,7 @@ export const sendOtpLoginThunk = createAsyncThunk<
   VerifyOtpResponse,
   VerifyPayload,
   { rejectValue: string }
->("otp/send", async ({ otp_code, otp_session_token }, { rejectWithValue }) => {
+>("login/verifyOtp", async ({ otp_code, otp_session_token }, { rejectWithValue }) => {
   try {
     const response = await axios.post(OTP_URL, {
       otp_code,
@@ -46,6 +46,7 @@ export const sendOtpLoginThunk = createAsyncThunk<
     });
 
     console.log("USER INFO FROM BACKEND:", profileResponse.data);
+    localStorage.setItem("user", JSON.stringify(profileResponse.data));
 
     return {
       access_token: accessToken,
