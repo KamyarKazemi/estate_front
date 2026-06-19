@@ -45,7 +45,9 @@ export default function DesktopNav({
   `;
 
   const isOpen = isDropdownClicked === "listings";
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+  const fullName = [user?.first_name, user?.last_name]
+    .filter(Boolean)
+    .join(" ");
   const displayName = fullName || user?.username || "کاربر";
   const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : "-";
 
@@ -171,7 +173,7 @@ export default function DesktopNav({
                     {displayName}
                   </p>
                   <p className="truncate text-xs text-slate-400">
-                    {user?.phone || user?.email || "حساب فعال"}
+                    {user?.phone_number || user?.email || "حساب فعال"}
                   </p>
                 </div>
               </div>
