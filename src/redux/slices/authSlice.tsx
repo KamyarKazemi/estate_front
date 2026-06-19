@@ -10,7 +10,7 @@ interface UserProfile {
   username?: string;
   first_name?: string;
   last_name?: string;
-  phone?: string;
+  phone_number?: string;
   email?: string;
   role?: string;
 }

@@ -1,10 +1,27 @@
-import { Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../../../redux/store";
+import { resetAuth } from "../../../redux/slices/authSlice";
+
+const ROLE_LABELS: Record<string, string> = {
+  CUSTOMER: "مشتری",
+  AGENT: "مشاور املاک",
+};
 
 function Dashboard() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const user = useSelector((state: RootState) => state.auth.user);
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+  const fullName = [user?.first_name, user?.last_name]
+    .filter(Boolean)
+    .join(" ");
+  const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : "-";
+
+  const handleLogout = () => {
+    dispatch(resetAuth());
+    navigate("/");
+  };
 
   return (
     <main dir="rtl" className="min-h-screen bg-slate-950 px-4 py-10 text-white">
@@ -27,26 +44,39 @@ function Dashboard() {
 
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-2xl">
             <p className="text-xs text-slate-500">شماره موبایل</p>
-            <p className="mt-2 text-base text-slate-100">{user?.phone || "-"}</p>
+            <p className="mt-2 text-base text-slate-100">
+              {user?.phone_number || "-"}
+            </p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-2xl">
             <p className="text-xs text-slate-500">ایمیل</p>
-            <p className="mt-2 text-base text-slate-100">{user?.email || "-"}</p>
+            <p className="mt-2 text-base text-slate-100">
+              {user?.email || "-"}
+            </p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 shadow-2xl">
             <p className="text-xs text-slate-500">نوع حساب</p>
-            <p className="mt-2 text-base text-slate-100">{user?.role || "-"}</p>
+            <p className="mt-2 text-base text-slate-100">{roleLabel}</p>
           </div>
         </div>
 
-        <Link
-          to="/"
-          className="w-fit rounded-xl border border-white/10 px-5 py-2.5 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white"
-        >
-          بازگشت به صفحه اصلی
-        </Link>
+        <div className="flex">
+          <Link
+            to="/"
+            className="w-fit rounded-xl border border-white/10 px-5 py-2.5 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white"
+          >
+            بازگشت به صفحه اصلی
+          </Link>
+          <Link
+            to="/"
+            onClick={handleLogout}
+            className="w-fit rounded-xl border border-white/10 px-5 py-2.5 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white"
+          >
+            خروج از حساب کاربری
+          </Link>
+        </div>
       </section>
     </main>
   );

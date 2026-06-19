@@ -9,6 +9,11 @@ const icons = {
   dropdownAngleDown: <FaAngleDown />,
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  CUSTOMER: "مشتری",
+  AGENT: "مشاور املاک",
+};
+
 interface DesktopNavProps {
   activeIndex: number | null;
   hoveredIndex: number | null;
@@ -42,6 +47,7 @@ export default function DesktopNav({
   const isOpen = isDropdownClicked === "listings";
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
   const displayName = fullName || user?.username || "کاربر";
+  const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : "-";
 
   const handleLogout = () => {
     dispatch(resetAuth());
@@ -173,7 +179,7 @@ export default function DesktopNav({
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-xl bg-white/5 px-3 py-2">
                   <p className="text-slate-500">نوع حساب</p>
-                  <p className="mt-1 text-slate-200">{user?.role || "-"}</p>
+                  <p className="mt-1 text-slate-200">{roleLabel}</p>
                 </div>
                 <div className="rounded-xl bg-white/5 px-3 py-2">
                   <p className="text-slate-500">ایمیل</p>

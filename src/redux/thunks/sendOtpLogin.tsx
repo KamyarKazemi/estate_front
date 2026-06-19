@@ -12,7 +12,7 @@ interface VerifyPayload {
 interface UserProfile {
   id: number;
   username?: string;
-  phone?: string;
+  phone_number?: string;
   email?: string;
 }
 
