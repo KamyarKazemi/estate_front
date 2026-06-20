@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 
 import { PhoneStep } from "./profile-components/PhoneStep";
 import { OtpStep } from "./profile-components/OtpStep";
@@ -222,29 +223,66 @@ function Profile() {
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-10"
+      className="relative min-h-screen overflow-hidden bg-slate-950 flex items-center justify-center px-3 sm:px-4 py-6 sm:py-10"
     >
-      <div className="w-full max-w-xl">
-        <div
+      {/* Ambient glow, matches the header/footer liquid-glass treatment */}
+      <motion.div
+        className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-sky-500/10 blur-[100px]"
+        animate={{ opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="pointer-events-none absolute -bottom-32 -left-32 h-72 w-72 rounded-full bg-sky-500/5 blur-[100px]"
+        animate={{ opacity: [0.4, 0.8, 0.4] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      />
+
+      <div className="relative z-10 w-full max-w-xl">
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
           className="
-            bg-slate-900/70 backdrop-blur-xl
-            border border-slate-700/50
-            rounded-2xl
-            shadow-2xl
-            p-6 sm:p-8
-            space-y-8
+            group relative bg-slate-900/60 backdrop-blur-xl
+            border border-white/10
+            rounded-2xl sm:rounded-3xl
+            shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)]
+            transition-colors duration-500
+            hover:border-white/20
+            p-5 sm:p-8 md:p-10
+            space-y-6 sm:space-y-8
           "
         >
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-semibold text-white tracking-tight">
-              {title}
-            </h1>
-            <p className="text-sm text-slate-400">{subtitle}</p>
+          <div className="text-center space-y-1.5 sm:space-y-2">
+            <AnimatePresence mode="wait">
+              <motion.h1
+                key={title}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="text-xl sm:text-2xl font-semibold text-white tracking-tight"
+              >
+                {title}
+              </motion.h1>
+            </AnimatePresence>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={subtitle}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="text-sm text-slate-400"
+              >
+                {subtitle}
+              </motion.p>
+            </AnimatePresence>
           </div>
 
           {/* Toggles */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <Toggle
               value={clientType}
               onChange={setClientType}
@@ -263,45 +301,48 @@ function Profile() {
             onStepClick={goToStep}
           />
 
-          {/* Step 1 */}
-          {step === 1 && (
-            <PhoneStep
-              phone={phone}
-              setPhone={setPhone}
-              isValid={isPhoneValid}
-              loading={sendingPhone}
-              skeletonLoading={bootstrappingProfile}
-              onSubmit={handlePhoneSubmit}
-            />
-          )}
+          {/* Steps */}
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <PhoneStep
+                key="phone-step"
+                phone={phone}
+                setPhone={setPhone}
+                isValid={isPhoneValid}
+                loading={sendingPhone}
+                skeletonLoading={bootstrappingProfile}
+                onSubmit={handlePhoneSubmit}
+              />
+            )}
 
-          {/* Step 2 */}
-          {step === 2 && (
-            <OtpStep
-              otp={otp}
-              otpRefs={otpRefs}
-              isComplete={isOtpComplete}
-              loading={verifyingOtp}
-              skeletonLoading={bootstrappingProfile}
-              handleChange={handleChange}
-              handleKeyDown={handleKeyDown}
-              handlePaste={handlePaste}
-              onSubmit={handleOtpSubmit}
-            />
-          )}
+            {step === 2 && (
+              <OtpStep
+                key="otp-step"
+                otp={otp}
+                otpRefs={otpRefs}
+                isComplete={isOtpComplete}
+                loading={verifyingOtp}
+                skeletonLoading={bootstrappingProfile}
+                handleChange={handleChange}
+                handleKeyDown={handleKeyDown}
+                handlePaste={handlePaste}
+                onSubmit={handleOtpSubmit}
+              />
+            )}
 
-          {/* Step 3 */}
-          {mode === "signup" && step === 3 && (
-            <PersonalInfoStep
-              values={signupValues}
-              setValues={setSignupValues}
-              isValid={isPersonalInfoValid}
-              loading={completingRegister}
-              skeletonLoading={bootstrappingProfile}
-              onSubmit={handleCompleteSignup}
-            />
-          )}
-        </div>
+            {mode === "signup" && step === 3 && (
+              <PersonalInfoStep
+                key="personal-step"
+                values={signupValues}
+                setValues={setSignupValues}
+                isValid={isPersonalInfoValid}
+                loading={completingRegister}
+                skeletonLoading={bootstrappingProfile}
+                onSubmit={handleCompleteSignup}
+              />
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </main>
   );

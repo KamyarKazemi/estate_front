@@ -1,3 +1,6 @@
+import { useId } from "react";
+import { motion } from "motion/react";
+
 export type ToggleOption<T extends string> = {
   label: string;
   value: T;
@@ -16,8 +19,16 @@ export function Toggle<T extends string>({
   options,
   className = "",
 }: ToggleProps<T>) {
+  const groupId = useId();
+
   return (
-    <div className={`flex bg-gray-100 rounded-lg p-1 w-fit ${className}`}>
+    <div
+      className={`
+        flex w-fit gap-1 rounded-xl border border-white/10 bg-white/5 p-1
+        backdrop-blur-sm
+        ${className}
+      `}
+    >
       {options.map((option) => {
         const active = option.value === value;
 
@@ -27,15 +38,24 @@ export function Toggle<T extends string>({
             type="button"
             onClick={() => onChange(option.value)}
             className={`
-              px-4 py-2 rounded-md text-sm font-medium transition
-              ${
-                active
-                  ? "bg-white shadow text-blue-600"
-                  : "text-gray-600 hover:text-gray-800"
-              }
+              relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200
+              ${!active ? "hover:bg-white/5" : ""}
             `}
           >
-            {option.label}
+            {active && (
+              <motion.span
+                layoutId={`toggle-pill-${groupId}`}
+                className="absolute inset-0 rounded-lg border border-sky-500/25 bg-sky-500/15"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span
+              className={`relative z-10 transition-colors duration-200 ${
+                active ? "text-sky-100" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {option.label}
+            </span>
           </button>
         );
       })}

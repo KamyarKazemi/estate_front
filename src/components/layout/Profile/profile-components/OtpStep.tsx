@@ -32,20 +32,20 @@ function OtpStepSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-4 w-56 rounded bg-slate-800" />
+        <div className="h-4 w-56 rounded bg-white/5" />
       </div>
 
       <div className="flex justify-center gap-2">
         {Array.from({ length: 5 }).map((_, idx) => (
           <div
             key={idx}
-            className="h-12 w-12 rounded-lg bg-slate-800 sm:h-14 sm:w-14"
+            className="h-12 w-12 rounded-xl bg-white/5 sm:h-14 sm:w-14"
           />
         ))}
       </div>
 
-      <div className="mx-auto h-3 w-44 rounded bg-slate-800" />
-      <div className="h-12 w-full rounded-lg bg-slate-800" />
+      <div className="mx-auto h-3 w-44 rounded bg-white/5" />
+      <div className="h-12 w-full rounded-xl bg-white/5" />
     </div>
   );
 }
@@ -101,11 +101,14 @@ export function OtpStep({
             onKeyDown={(e) => handleKeyDown(idx, e)}
             onPaste={handlePaste}
             dir="ltr"
-            whileFocus={{ scale: 1.04 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.04, duration: 0.2, ease: "easeOut" }}
+            whileFocus={{ scale: 1.06 }}
             className="
-              h-12 w-12 rounded-lg border border-slate-700 bg-slate-900
-              text-center text-lg font-semibold text-white outline-none transition
-              focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
+              h-12 w-12 rounded-xl border border-white/10 bg-white/5
+              text-center text-lg font-semibold text-white outline-none transition-colors duration-300
+              focus:border-sky-500/50 focus:bg-slate-800/40 focus:ring-4 focus:ring-sky-500/10
               sm:h-14 sm:w-14
             "
           />
@@ -128,10 +131,10 @@ export function OtpStep({
         whileHover={!loading && isComplete ? { scale: 1.01 } : {}}
         whileTap={!loading && isComplete ? { scale: 0.99 } : {}}
         className="
-          flex h-12 w-full items-center justify-center gap-2 rounded-lg
-          font-semibold text-white transition
-          bg-indigo-600 hover:bg-indigo-500
-          disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400
+          flex h-12 w-full items-center justify-center gap-2 rounded-xl
+          border font-semibold transition-all duration-300
+          border-sky-500/25 bg-sky-500/15 text-sky-100 hover:border-sky-500/40 hover:bg-sky-500/25
+          disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-500
         "
       >
         {loading ? (

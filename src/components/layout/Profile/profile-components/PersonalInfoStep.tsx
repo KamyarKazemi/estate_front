@@ -26,14 +26,33 @@ function PersonalInfoStepSkeleton() {
     <div className="space-y-4 animate-pulse">
       {Array.from({ length: 5 }).map((_, idx) => (
         <div key={idx} className="space-y-2">
-          <div className="h-4 w-28 rounded bg-slate-800" />
-          <div className="h-12 w-full rounded-lg bg-slate-800" />
+          <div className="h-4 w-28 rounded bg-white/5" />
+          <div className="h-12 w-full rounded-xl bg-white/5" />
         </div>
       ))}
-      <div className="h-12 w-full rounded-lg bg-slate-800" />
+      <div className="h-12 w-full rounded-xl bg-white/5" />
     </div>
   );
 }
+
+const inputClasses = `
+  h-12 w-full rounded-xl border border-white/10 bg-white/5 px-3
+  text-white placeholder-slate-500 outline-none transition-colors duration-300
+  focus:border-sky-500/50 focus:bg-slate-800/40 focus:ring-4 focus:ring-sky-500/10
+`;
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
+  },
+};
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: "easeOut" } },
+};
 
 export function PersonalInfoStep({
   values,
@@ -64,109 +83,102 @@ export function PersonalInfoStep({
   return (
     <motion.form
       onSubmit={handleSubmit}
-      className="space-y-4"
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
+      className="space-y-3 sm:space-y-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
     >
-      <div>
+      <motion.div variants={fieldVariants}>
         <label className="mb-2 block text-sm font-medium text-white">نام</label>
-        <input
+        <motion.input
           type="text"
           value={values.firstName}
           onChange={handleChange("firstName")}
           dir="rtl"
-          className="
-            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
-            text-right text-white placeholder-slate-500 outline-none transition
-            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
-          "
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className={inputClasses}
           placeholder="نام"
         />
-      </div>
+      </motion.div>
 
-      <div>
+      <motion.div variants={fieldVariants}>
         <label className="mb-2 block text-sm font-medium text-white">
           نام خانوادگی
         </label>
-        <input
+        <motion.input
           type="text"
           value={values.lastName}
           onChange={handleChange("lastName")}
           dir="rtl"
-          className="
-            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
-            text-right text-white placeholder-slate-500 outline-none transition
-            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
-          "
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className={inputClasses}
           placeholder="نام خانوادگی"
         />
-      </div>
+      </motion.div>
 
-      <div>
+      <motion.div variants={fieldVariants}>
         <label className="mb-2 block text-sm font-medium text-white">
           ایمیل
         </label>
-        <input
+        <motion.input
           type="email"
           value={values.email}
           onChange={handleChange("email")}
           dir="ltr"
-          className="
-            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
-            text-left text-white placeholder-slate-500 outline-none transition
-            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
-          "
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className={`${inputClasses} text-left`}
           placeholder="example@email.com"
         />
-      </div>
+      </motion.div>
 
-      <div>
+      <motion.div variants={fieldVariants}>
         <label className="mb-2 block text-sm font-medium text-white">
           رمز عبور
         </label>
-        <input
+        <motion.input
           type="password"
           value={values.password}
           onChange={handleChange("password")}
           dir="ltr"
-          className="
-            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
-            text-left text-white placeholder-slate-500 outline-none transition
-            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
-          "
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className={`${inputClasses} text-left`}
           placeholder="••••••••"
         />
-      </div>
+      </motion.div>
 
-      <div>
+      <motion.div variants={fieldVariants}>
         <label className="mb-2 block text-sm font-medium text-white">
           تکرار رمز عبور
         </label>
-        <input
+        <motion.input
           type="password"
           value={values.confirmPassword}
           onChange={handleChange("confirmPassword")}
           dir="ltr"
-          className="
-            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-3
-            text-left text-white placeholder-slate-500 outline-none transition
-            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
-          "
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          className={`${inputClasses} text-left`}
           placeholder="••••••••"
         />
-      </div>
+      </motion.div>
 
       <motion.button
         type="submit"
+        variants={fieldVariants}
         disabled={!isValid || loading}
         whileHover={!loading && isValid ? { scale: 1.01 } : {}}
         whileTap={!loading && isValid ? { scale: 0.99 } : {}}
         className="
-          flex h-12 w-full items-center justify-center gap-2 rounded-lg
-          bg-indigo-600 font-semibold text-white transition hover:bg-indigo-500
-          disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400
+          flex h-12 w-full items-center justify-center gap-2 rounded-xl
+          border font-semibold transition-all duration-300
+          border-sky-500/25 bg-sky-500/15 text-sky-100 hover:border-sky-500/40 hover:bg-sky-500/25
+          disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-500
         "
       >
         {loading ? (

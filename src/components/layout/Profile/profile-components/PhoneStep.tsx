@@ -26,11 +26,11 @@ function PhoneStepSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="space-y-3">
-        <div className="h-4 w-32 rounded bg-slate-800" />
-        <div className="h-12 w-full rounded-lg bg-slate-800" />
-        <div className="h-3 w-52 rounded bg-slate-800" />
+        <div className="h-4 w-32 rounded bg-white/5" />
+        <div className="h-12 w-full rounded-xl bg-white/5" />
+        <div className="h-3 w-52 rounded bg-white/5" />
       </div>
-      <div className="h-12 w-full rounded-lg bg-slate-800" />
+      <div className="h-12 w-full rounded-xl bg-white/5" />
     </div>
   );
 }
@@ -84,7 +84,7 @@ export function PhoneStep({
           شماره تلفن همراه
         </label>
 
-        <input
+        <motion.input
           type="tel"
           value={phone}
           onChange={handleChange}
@@ -92,10 +92,12 @@ export function PhoneStep({
           autoComplete="tel"
           placeholder="09123456789"
           dir="ltr"
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
           className="
-            h-12 w-full rounded-lg border border-slate-700 bg-slate-900 px-4
-            text-white placeholder-slate-500 outline-none transition
-            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30
+            h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4
+            text-white placeholder-slate-500 outline-none transition-colors duration-300
+            focus:border-sky-500/50 focus:bg-slate-800/40 focus:ring-4 focus:ring-sky-500/10
           "
         />
 
@@ -116,10 +118,10 @@ export function PhoneStep({
         whileHover={!loading && isStrictValid ? { scale: 1.01 } : {}}
         whileTap={!loading && isStrictValid ? { scale: 0.99 } : {}}
         className="
-          flex h-12 w-full items-center justify-center gap-2 rounded-lg
-          font-semibold text-white transition
-          bg-indigo-600 hover:bg-indigo-500
-          disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400
+          flex h-12 w-full items-center justify-center gap-2 rounded-xl
+          border font-semibold transition-all duration-300
+          border-sky-500/25 bg-sky-500/15 text-sky-100 hover:border-sky-500/40 hover:bg-sky-500/25
+          disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-500
         "
       >
         {loading ? (
