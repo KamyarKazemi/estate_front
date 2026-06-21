@@ -10,7 +10,7 @@ import { StepNavigation } from "./profile-components/StepNavigation";
 import { Toggle } from "./ui/Toggle";
 
 import { useOtp } from "./hooks/useOtp";
-import { useSignupValidation } from "./hooks/useSignupValidation";
+import { useSignupValidation, passwordRegex } from "./hooks/useSignupValidation";
 
 import type { ClientType, Mode, Step, SignupValues } from "./types/types";
 
@@ -80,14 +80,20 @@ function Profile() {
   /* ---------------- شماره موبایل ---------------- */
 
   const [phone, setPhone] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
 
   const isPhoneValid = /^09\d{9}$/.test(phone);
+  const isLoginPasswordValid =
+    mode !== "login" || passwordRegex.test(loginPassword);
+  const isPhoneFormValid = isPhoneValid && isLoginPasswordValid;
 
   const handlePhoneSubmit = async () => {
-    if (!isPhoneValid || sendingPhone) return;
+    if (!isPhoneFormValid || sendingPhone) return;
 
     if (mode === "login") {
-      await dispatch(sendNumberLoginThunk(phone)).unwrap();
+      await dispatch(
+        sendNumberLoginThunk({ phone_number: phone, password: loginPassword }),
+      ).unwrap();
     } else {
       await dispatch(sendNumberThunk(phone)).unwrap();
     }
@@ -190,6 +196,7 @@ function Profile() {
     dispatch(resetAuthFlow());
     setStep(1);
     setPhone("");
+    setLoginPassword("");
     resetOtp();
     setSignupValues({
       firstName: "",
@@ -308,7 +315,11 @@ function Profile() {
                 key="phone-step"
                 phone={phone}
                 setPhone={setPhone}
-                isValid={isPhoneValid}
+                mode={mode}
+                password={loginPassword}
+                setPassword={setLoginPassword}
+                isPasswordValid={isLoginPasswordValid}
+                isValid={isPhoneFormValid}
                 loading={sendingPhone}
                 skeletonLoading={bootstrappingProfile}
                 onSubmit={handlePhoneSubmit}

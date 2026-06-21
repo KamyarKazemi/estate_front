@@ -1,9 +1,15 @@
-import type { ChangeEvent, FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { motion } from "motion/react";
+import type { Mode } from "../types/types";
+import { passwordRegex } from "../hooks/useSignupValidation";
 
 export type PhoneStepProps = {
   phone: string;
   setPhone: (v: string) => void;
+  mode: Mode;
+  password: string;
+  setPassword: (v: string) => void;
+  isPasswordValid: boolean;
   isValid: boolean;
   loading: boolean;
   skeletonLoading?: boolean;
@@ -22,7 +28,7 @@ function Spinner() {
   );
 }
 
-function PhoneStepSkeleton() {
+function PhoneStepSkeleton({ withPassword }: { withPassword: boolean }) {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="space-y-3">
@@ -30,18 +36,36 @@ function PhoneStepSkeleton() {
         <div className="h-12 w-full rounded-xl bg-white/5" />
         <div className="h-3 w-52 rounded bg-white/5" />
       </div>
+      {withPassword && (
+        <div className="space-y-3">
+          <div className="h-4 w-24 rounded bg-white/5" />
+          <div className="h-12 w-full rounded-xl bg-white/5" />
+        </div>
+      )}
       <div className="h-12 w-full rounded-xl bg-white/5" />
     </div>
   );
 }
 
+const inputClasses = `
+  h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4
+  text-white placeholder-slate-500 outline-none transition-colors duration-300
+  focus:border-sky-500/50 focus:bg-slate-800/40 focus:ring-4 focus:ring-sky-500/10
+`;
+
 export function PhoneStep({
   phone,
   setPhone,
+  mode,
+  password,
+  setPassword,
   loading,
   skeletonLoading = false,
   onSubmit,
 }: PhoneStepProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isLogin = mode === "login";
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     let digits = e.target.value.replace(/\D/g, "");
 
@@ -58,16 +82,18 @@ export function PhoneStep({
     setPhone(digits);
   };
 
+  const isPhoneValid = PHONE_REGEX.test(phone);
+  const isPasswordValid = !isLogin || passwordRegex.test(password);
+  const isStrictValid = isPhoneValid && isPasswordValid;
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!PHONE_REGEX.test(phone) || loading) return;
+    if (!isStrictValid || loading) return;
     await onSubmit();
   };
 
-  const isStrictValid = PHONE_REGEX.test(phone);
-
   if (skeletonLoading) {
-    return <PhoneStepSkeleton />;
+    return <PhoneStepSkeleton withPassword={isLogin} />;
   }
 
   return (
@@ -94,14 +120,10 @@ export function PhoneStep({
           dir="ltr"
           whileFocus={{ scale: 1.01 }}
           transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="
-            h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4
-            text-white placeholder-slate-500 outline-none transition-colors duration-300
-            focus:border-sky-500/50 focus:bg-slate-800/40 focus:ring-4 focus:ring-sky-500/10
-          "
+          className={inputClasses}
         />
 
-        {phone.length > 0 && !isStrictValid && (
+        {phone.length > 0 && !isPhoneValid && (
           <motion.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
@@ -111,6 +133,55 @@ export function PhoneStep({
           </motion.p>
         )}
       </div>
+
+      {isLogin && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+        >
+          <label className="mb-3 block text-sm font-medium text-white">
+            رمز عبور
+          </label>
+
+          <div className="relative">
+            <motion.input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              dir="ltr"
+              whileFocus={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              className={`${inputClasses} pl-12`}
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              tabIndex={-1}
+              className="
+                absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400
+                transition-colors duration-200 hover:text-sky-200
+              "
+            >
+              {showPassword ? "پنهان" : "نمایش"}
+            </button>
+          </div>
+
+          {password.length > 0 && !isPasswordValid && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-2 text-sm text-red-400"
+            >
+              رمز عبور باید حداقل ۸ کاراکتر و شامل حروف بزرگ، کوچک و عدد باشد.
+            </motion.p>
+          )}
+        </motion.div>
+      )}
 
       <motion.button
         type="submit"
