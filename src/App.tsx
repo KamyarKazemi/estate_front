@@ -5,32 +5,33 @@ import Profile from "./components/layout/Profile/Profile";
 import Dashboard from "./components/layout/dashboard/Dashboard";
 import ProtectedRoute from "./components/layout/dashboard/ProtectedRoute";
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Root />,
+    children: [
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        element: <Profile />,
+        path: "/profile",
+      },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            element: <Dashboard />,
+            path: "/dashboard",
+          },
+        ],
+      },
+    ],
+  },
+]);
+
 function App() {
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <Root />,
-      children: [
-        {
-          index: true,
-          element: <Home />,
-        },
-        {
-          element: <Profile />,
-          path: "/profile",
-        },
-        {
-          element: <ProtectedRoute />,
-          children: [
-            {
-              element: <Dashboard />,
-              path: "/dashboard",
-            },
-          ],
-        },
-      ],
-    },
-  ]);
   return <RouterProvider router={router} />;
 }
 
