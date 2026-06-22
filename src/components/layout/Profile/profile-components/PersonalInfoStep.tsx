@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "motion/react";
+import type { Variants } from "motion/react";
 import type { SignupValues } from "../types/types";
 
 type PersonalInfoStepProps = {
@@ -41,7 +42,7 @@ const inputClasses = `
   focus:border-sky-500/50 focus:bg-slate-800/40 focus:ring-4 focus:ring-sky-500/10
 `;
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -49,7 +50,7 @@ const containerVariants = {
   },
 };
 
-const fieldVariants = {
+const fieldVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: "easeOut" } },
 };

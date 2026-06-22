@@ -4,16 +4,8 @@ import { sendOtpThunk } from "../thunks/sendOtpThunk";
 import { completeRegister } from "../thunks/completeRegisterThunk";
 import { sendNumberLoginThunk } from "../thunks/sendNumberLogin";
 import { sendOtpLoginThunk } from "../thunks/sendOtpLogin";
-
-interface UserProfile {
-  id?: number;
-  username?: string;
-  first_name?: string;
-  last_name?: string;
-  phone_number?: string;
-  email?: string;
-  role?: string;
-}
+import { readStoredAuth } from "../authStorage";
+import type { StoredAuth, UserProfile } from "../authStorage";
 
 interface AuthState {
   user: UserProfile | null;
@@ -33,23 +25,12 @@ interface AuthState {
   error: string | null;
 }
 
-const getStoredUser = (): UserProfile | null => {
-  const storedUser = localStorage.getItem("user");
-
-  if (!storedUser) return null;
-
-  try {
-    return JSON.parse(storedUser) as UserProfile;
-  } catch {
-    localStorage.removeItem("user");
-    return null;
-  }
-};
+const storedAuth = readStoredAuth();
 
 const initialState: AuthState = {
-  user: getStoredUser(),
-  access_token: localStorage.getItem("access_token"),
-  refresh_token: localStorage.getItem("refresh_token"),
+  user: storedAuth.user,
+  access_token: storedAuth.accessToken,
+  refresh_token: storedAuth.refreshToken,
 
   phone_number: null,
   otp_session_token: null,
@@ -69,10 +50,6 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     resetAuth: (state) => {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("user");
-
       state.user = null;
       state.access_token = null;
       state.refresh_token = null;
@@ -80,6 +57,12 @@ const authSlice = createSlice({
       state.otp_session_token = null;
       state.registration_token = null;
       state.error = null;
+    },
+
+    hydrateAuth: (state, action: { payload: StoredAuth }) => {
+      state.access_token = action.payload.accessToken;
+      state.refresh_token = action.payload.refreshToken;
+      state.user = action.payload.user;
     },
 
     resetAuthFlow: (state) => {
@@ -182,6 +165,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { resetAuth, resetAuthFlow, setBootstrappingProfile } =
+export const { hydrateAuth, resetAuth, resetAuthFlow, setBootstrappingProfile } =
   authSlice.actions;
 export default authSlice.reducer;

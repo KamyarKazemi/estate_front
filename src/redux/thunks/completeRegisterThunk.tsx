@@ -1,5 +1,8 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { getApiErrorMessage } from "../apiError";
+import { extractToken } from "../authStorage";
+import type { UserProfile } from "../authStorage";
 
 const URL = import.meta.env.VITE_BACKEND_URL_REGISTER_THIRD;
 const ACCESS_URL = import.meta.env.VITE_BACKEND_URL_ACCESS;
@@ -14,25 +17,12 @@ export interface CompleteRegisterPayload {
   confirm_password: string;
 }
 
-interface UserProfile {
-  id?: number;
-  username?: string;
-  first_name?: string;
-  last_name?: string;
-  phone_number?: string;
-  email?: string;
-  role?: string;
-}
-
 interface CompleteRegisterResponse {
   message?: string;
   access_token?: string;
   refresh_token?: string;
   user?: UserProfile | null;
 }
-
-console.log("ENV:", import.meta.env);
-console.log("THIRD URL:", URL);
 
 export const completeRegister = createAsyncThunk<
   CompleteRegisterResponse,
@@ -41,53 +31,35 @@ export const completeRegister = createAsyncThunk<
 >("register/complete", async (info, { rejectWithValue }) => {
   try {
     const response = await axios.post(URL, info);
-
-    console.log("completeRegister thunk dispatched:", info);
-
-    const accessToken =
-      response.data.access_token ||
-      response.data.access ||
-      response.data.tokens?.access;
-    const refreshToken =
-      response.data.refresh_token ||
-      response.data.refresh ||
-      response.data.tokens?.refresh;
-
-    let user = response.data.user || response.data.profile || null;
-
-    if (accessToken) {
-      localStorage.setItem("access_token", accessToken);
-    }
-
-    if (refreshToken) {
-      localStorage.setItem("refresh_token", refreshToken);
-    }
+    const accessToken = extractToken(response.data, ["access", "access_token"]);
+    const refreshToken = extractToken(response.data, [
+      "refresh",
+      "refresh_token",
+    ]);
+    const responseUser = response.data?.user ?? response.data?.profile;
+    let user: UserProfile | null =
+      responseUser && typeof responseUser === "object" ? responseUser : null;
 
     if (accessToken && ACCESS_URL && !user) {
-      const profileResponse = await axios.get(ACCESS_URL, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      user = profileResponse.data;
-    }
-
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
+      try {
+        const profileResponse = await axios.get(ACCESS_URL, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        user = profileResponse.data;
+      } catch {
+        // Registration remains successful if profile hydration needs a retry.
+      }
     }
 
     return {
       message: response.data.message,
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      access_token: accessToken ?? undefined,
+      refresh_token: refreshToken ?? undefined,
       user,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return rejectWithValue(
-      error?.response?.data?.message ||
-        error?.response?.data ||
-        "تکمیل ثبت‌نام ناموفق بود",
+      getApiErrorMessage(error, "تکمیل ثبت‌نام ناموفق بود."),
     );
   }
 });
