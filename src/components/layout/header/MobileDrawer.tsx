@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { FaAngleDown } from "react-icons/fa6";
+import type { RootState } from "../../../redux/store";
 
 const icons = {
   dropdownAngleDown: <FaAngleDown />,
@@ -27,7 +29,17 @@ export default function MobileDrawer({
   setIsMobileListingsOpen,
   closeMobileMenu,
 }: MobileDrawerProps) {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isSignedIn = useSelector(
+    (state: RootState) => Boolean(state.auth.access_token),
+  );
+
   if (!isMobileMenuMounted) return null;
+
+  const fullName = [user?.first_name, user?.last_name]
+    .filter(Boolean)
+    .join(" ");
+  const accountLabel = fullName || user?.username || "پروفایل";
 
   return (
     <div
@@ -272,7 +284,7 @@ export default function MobileDrawer({
             style={{ transitionDelay: "230ms" }}
           >
             <Link
-              to="/profile"
+              to={isSignedIn ? "/dashboard" : "/profile"}
               className="
                 flex items-center justify-between
                 rounded-2xl px-4 py-3.5
@@ -283,7 +295,9 @@ export default function MobileDrawer({
               "
               onClick={closeMobileMenu}
             >
-              <span>پروفایل</span>
+              <span className="min-w-0 truncate">
+                {isSignedIn ? accountLabel : "پروفایل"}
+              </span>
               <span className="text-slate-500 text-xs">←</span>
             </Link>
           </li>

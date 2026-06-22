@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 
 import { PhoneStep } from "./profile-components/PhoneStep";
@@ -34,6 +34,7 @@ function Profile() {
     verifyingOtp,
     completingRegister,
     bootstrappingProfile,
+    access_token,
   } = useSelector((state: RootState) => state.auth);
 
   /* ---------------- نوع کاربر + حالت ---------------- */
@@ -174,7 +175,7 @@ function Profile() {
       }),
     ).unwrap();
 
-    if (result.access_token && result.user) {
+    if (result.access_token) {
       navigate("/dashboard");
       return;
     }
@@ -226,6 +227,10 @@ function Profile() {
   const subtitle = clientType === "CUSTOMER" ? "پنل کاربران" : "پنل مشاوران";
 
   /* ---------------- UI ---------------- */
+
+  if (access_token) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <main
