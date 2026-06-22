@@ -51,6 +51,8 @@ export const completeRegister = createAsyncThunk<
       }
     }
 
+    //ex
+
     return {
       message: response.data.message,
       access_token: accessToken ?? undefined,
