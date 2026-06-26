@@ -1,10 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit";
+
 import { sendNumberThunk } from "../thunks/sendNumberThunk";
 import { sendOtpThunk } from "../thunks/sendOtpThunk";
 import { completeRegister } from "../thunks/completeRegisterThunk";
 import { sendNumberLoginThunk } from "../thunks/sendNumberLogin";
 import { sendOtpLoginThunk } from "../thunks/sendOtpLogin";
-import { readStoredAuth } from "../authStorage";
+import { updateProfileThunk } from "../thunks/updateProfileThunk";
+import { refreshAccessTokenThunk } from "../thunks/refreshAccessTokenThunk";
+
+import {
+  clearStoredAuth,
+  persistStoredAuth,
+  readStoredAuth,
+} from "../authStorage";
+
 import type { StoredAuth, UserProfile } from "../authStorage";
 
 interface AuthState {
@@ -21,6 +30,11 @@ interface AuthState {
   completingRegister: boolean;
   bootstrappingProfile: boolean;
   loading: boolean;
+
+  refreshingToken: boolean;
+
+  updateProfileThunk: boolean;
+  updatingProfile: boolean;
 
   error: string | null;
 }
@@ -42,45 +56,78 @@ const initialState: AuthState = {
   bootstrappingProfile: false,
   loading: false,
 
+  refreshingToken: false,
+
+  updateProfileThunk: false,
+  updatingProfile: false,
+
   error: null,
 };
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
+
   reducers: {
     resetAuth: (state) => {
       state.user = null;
       state.access_token = null;
       state.refresh_token = null;
+
       state.phone_number = null;
       state.otp_session_token = null;
       state.registration_token = null;
+
+      state.sendingPhone = false;
+      state.verifyingOtp = false;
+      state.completingRegister = false;
+      state.bootstrappingProfile = false;
+      state.loading = false;
+      state.refreshingToken = false;
+
+      state.updateProfileThunk = false;
+      state.updatingProfile = false;
+
       state.error = null;
+
+      clearStoredAuth();
     },
 
     hydrateAuth: (state, action: { payload: StoredAuth }) => {
       state.access_token = action.payload.accessToken;
       state.refresh_token = action.payload.refreshToken;
       state.user = action.payload.user;
+
+      persistStoredAuth({
+        accessToken: action.payload.accessToken,
+        refreshToken: action.payload.refreshToken,
+        user: action.payload.user,
+      });
     },
 
     resetAuthFlow: (state) => {
       state.phone_number = null;
       state.otp_session_token = null;
       state.registration_token = null;
+
       state.error = null;
+
       state.sendingPhone = false;
       state.verifyingOtp = false;
       state.completingRegister = false;
       state.bootstrappingProfile = false;
       state.loading = false;
+      state.refreshingToken = false;
+
+      state.updateProfileThunk = false;
+      state.updatingProfile = false;
     },
 
     setBootstrappingProfile: (state, action: { payload: boolean }) => {
       state.bootstrappingProfile = action.payload;
     },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(sendNumberThunk.pending, (state) => {
@@ -131,17 +178,20 @@ const authSlice = createSlice({
       .addCase(completeRegister.fulfilled, (state, action) => {
         state.completingRegister = false;
 
-        if (action.payload.access_token) {
-          state.access_token = action.payload.access_token;
-        }
+        const accessToken = action.payload.access_token ?? state.access_token;
+        const refreshToken =
+          action.payload.refresh_token ?? state.refresh_token;
+        const user = action.payload.user ?? state.user;
 
-        if (action.payload.refresh_token) {
-          state.refresh_token = action.payload.refresh_token;
-        }
+        state.access_token = accessToken;
+        state.refresh_token = refreshToken;
+        state.user = user;
 
-        if (action.payload.user) {
-          state.user = action.payload.user;
-        }
+        persistStoredAuth({
+          accessToken,
+          refreshToken,
+          user,
+        });
       })
       .addCase(completeRegister.rejected, (state, action) => {
         state.completingRegister = false;
@@ -154,17 +204,84 @@ const authSlice = createSlice({
       })
       .addCase(sendOtpLoginThunk.fulfilled, (state, action) => {
         state.verifyingOtp = false;
+
         state.access_token = action.payload.access_token;
         state.refresh_token = action.payload.refresh_token;
         state.user = action.payload.user;
+
+        persistStoredAuth({
+          accessToken: action.payload.access_token,
+          refreshToken: action.payload.refresh_token,
+          user: action.payload.user,
+        });
       })
       .addCase(sendOtpLoginThunk.rejected, (state, action) => {
         state.verifyingOtp = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(refreshAccessTokenThunk.pending, (state) => {
+        state.refreshingToken = true;
+        state.error = null;
+      })
+      .addCase(refreshAccessTokenThunk.fulfilled, (state, action) => {
+        state.refreshingToken = false;
+
+        state.access_token = action.payload;
+
+        persistStoredAuth({
+          accessToken: action.payload,
+          refreshToken: state.refresh_token,
+          user: state.user,
+        });
+      })
+      .addCase(refreshAccessTokenThunk.rejected, (state, action) => {
+        state.refreshingToken = false;
+
+        state.user = null;
+        state.access_token = null;
+        state.refresh_token = null;
+
+        state.error =
+          (action.payload as string) ??
+          "نشست شما منقضی شده است. لطفاً دوباره وارد شوید.";
+
+        clearStoredAuth();
+      })
+
+      .addCase(updateProfileThunk.pending, (state) => {
+        state.updateProfileThunk = false;
+        state.updatingProfile = true;
+        state.error = null;
+      })
+      .addCase(updateProfileThunk.fulfilled, (state, action) => {
+        state.updateProfileThunk = true;
+        state.updatingProfile = false;
+
+        state.user = {
+          ...state.user,
+          ...action.payload.user,
+        };
+
+        persistStoredAuth({
+          accessToken: state.access_token,
+          refreshToken: state.refresh_token,
+          user: state.user,
+        });
+      })
+      .addCase(updateProfileThunk.rejected, (state, action) => {
+        state.updateProfileThunk = false;
+        state.updatingProfile = false;
         state.error = action.payload as string;
       });
   },
 });
 
-export const { hydrateAuth, resetAuth, resetAuthFlow, setBootstrappingProfile } =
-  authSlice.actions;
+export const {
+  hydrateAuth,
+  resetAuth,
+  resetAuthFlow,
+  setBootstrappingProfile,
+} = authSlice.actions;
+
 export default authSlice.reducer;
