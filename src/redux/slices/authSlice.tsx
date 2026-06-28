@@ -8,6 +8,11 @@ import { sendOtpLoginThunk } from "../thunks/sendOtpLogin";
 import { updateProfileThunk } from "../thunks/updateProfileThunk";
 import { refreshAccessTokenThunk } from "../thunks/refreshAccessTokenThunk";
 
+//
+import { resetPasswordPhoneThunk } from "../thunks/resetPasswordPhoneThunk";
+import { resetPasswordOtpThunk } from "../thunks/resetPasswordOtpThunk";
+//
+
 import {
   clearStoredAuth,
   persistStoredAuth,
@@ -36,6 +41,15 @@ interface AuthState {
   updateProfileThunk: boolean;
   updatingProfile: boolean;
 
+  //
+  //
+  sendingResetPhone: boolean;
+  resetOtpSessionToken: string | null;
+  resetPasswordToken: string | null;
+  verifyingResetOtp: boolean;
+  //
+  //
+
   error: string | null;
 }
 
@@ -60,6 +74,15 @@ const initialState: AuthState = {
 
   updateProfileThunk: false,
   updatingProfile: false,
+
+  //
+  //
+  sendingResetPhone: false,
+  resetOtpSessionToken: null,
+  resetPasswordToken: null,
+  verifyingResetOtp: false,
+  //
+  //
 
   error: null,
 };
@@ -273,7 +296,39 @@ const authSlice = createSlice({
         state.updateProfileThunk = false;
         state.updatingProfile = false;
         state.error = action.payload as string;
+      })
+
+      //
+      //
+      .addCase(resetPasswordPhoneThunk.pending, (state) => {
+        state.sendingResetPhone = true; // not sendingPhone
+        state.error = null;
+      })
+      .addCase(resetPasswordPhoneThunk.fulfilled, (state, action) => {
+        state.sendingResetPhone = false;
+        state.resetOtpSessionToken = action.payload.otp_session_token; // not otp_session_token
+      })
+      .addCase(resetPasswordPhoneThunk.rejected, (state, action) => {
+        state.sendingResetPhone = false;
+        state.error = action.payload as string;
+      })
+      //
+      //
+
+      //
+      .addCase(resetPasswordOtpThunk.pending, (state) => {
+        state.verifyingResetOtp = true;
+        state.error = null;
+      })
+      .addCase(resetPasswordOtpThunk.fulfilled, (state, action) => {
+        state.verifyingResetOtp = false;
+        state.resetPasswordToken = action.payload.reset_token;
+      })
+      .addCase(resetPasswordOtpThunk.rejected, (state, action) => {
+        state.verifyingResetOtp = false;
+        state.error = action.payload as string;
       });
+    //
   },
 });
 

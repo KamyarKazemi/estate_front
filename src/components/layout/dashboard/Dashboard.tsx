@@ -229,6 +229,14 @@ function Dashboard() {
                 >
                   خروج از حساب کاربری
                 </button>
+                <button
+                  type="button"
+                  className=" w-fit rounded-xl border border-sky-500/20 bg-sky-500/5 px-5 py-2.5
+                    text-sm text-sky-300 transition-all duration-300
+                    hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-sky-200"
+                >
+                  تغییر رمز عبور
+                </button>
               </>
             )}
           </div>
