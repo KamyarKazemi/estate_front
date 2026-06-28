@@ -68,6 +68,7 @@ function ResetPassword() {
 
   const handlePhoneSubmit = async () => {
     await dispatch(resetPasswordPhoneThunk(phone)).unwrap();
+    setStep(2);
   };
 
   /* -------- step 2: otp -------- */
@@ -82,6 +83,7 @@ function ResetPassword() {
         otp_code: otp.join(""),
       }),
     ).unwrap();
+    setStep(3);
   };
 
   /* -------- step 3: new password -------- */

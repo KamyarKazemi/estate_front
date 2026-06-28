@@ -4,6 +4,7 @@ import Home from "./components/layout/main/Home";
 import Profile from "./components/layout/Profile/Profile";
 import Dashboard from "./components/layout/dashboard/Dashboard";
 import ProtectedRoute from "./components/layout/dashboard/ProtectedRoute";
+import ResetPassword from "./components/layout/dashboard/ResetPassword";
 
 const router = createBrowserRouter([
   {
@@ -24,6 +25,10 @@ const router = createBrowserRouter([
           {
             element: <Dashboard />,
             path: "/dashboard",
+          },
+          {
+            element: <ResetPassword />,
+            path: "/reset-password",
           },
         ],
       },
