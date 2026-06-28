@@ -11,6 +11,7 @@ import { refreshAccessTokenThunk } from "../thunks/refreshAccessTokenThunk";
 //
 import { resetPasswordPhoneThunk } from "../thunks/resetPasswordPhoneThunk";
 import { resetPasswordOtpThunk } from "../thunks/resetPasswordOtpThunk";
+import { resetPasswordThunk } from "../thunks/resetPasswordThunk";
 //
 
 import {
@@ -43,10 +44,11 @@ interface AuthState {
 
   //
   //
-  sendingResetPhone: boolean;
   resetOtpSessionToken: string | null;
   resetPasswordToken: string | null;
+  sendingResetPhone: boolean;
   verifyingResetOtp: boolean;
+  resettingPassword: boolean;
   //
   //
 
@@ -77,10 +79,12 @@ const initialState: AuthState = {
 
   //
   //
-  sendingResetPhone: false,
   resetOtpSessionToken: null,
   resetPasswordToken: null,
+  sendingResetPhone: false,
   verifyingResetOtp: false,
+  resettingPassword: false,
+
   //
   //
 
@@ -144,6 +148,15 @@ const authSlice = createSlice({
 
       state.updateProfileThunk = false;
       state.updatingProfile = false;
+    },
+
+    resetPasswordFlow: (state) => {
+      state.resetOtpSessionToken = null;
+      state.resetPasswordToken = null;
+      state.sendingResetPhone = false;
+      state.verifyingResetOtp = false;
+      state.resettingPassword = false;
+      state.error = null;
     },
 
     setBootstrappingProfile: (state, action: { payload: boolean }) => {
@@ -327,7 +340,25 @@ const authSlice = createSlice({
       .addCase(resetPasswordOtpThunk.rejected, (state, action) => {
         state.verifyingResetOtp = false;
         state.error = action.payload as string;
+      })
+      //
+
+      //
+      //
+      .addCase(resetPasswordThunk.pending, (state) => {
+        state.resettingPassword = true;
+        state.error = null;
+      })
+      .addCase(resetPasswordThunk.fulfilled, (state) => {
+        state.resettingPassword = false;
+        state.resetOtpSessionToken = null;
+        state.resetPasswordToken = null;
+      })
+      .addCase(resetPasswordThunk.rejected, (state, action) => {
+        state.resettingPassword = false;
+        state.error = action.payload as string;
       });
+    //
     //
   },
 });
@@ -337,6 +368,7 @@ export const {
   resetAuth,
   resetAuthFlow,
   setBootstrappingProfile,
+  resetPasswordFlow,
 } = authSlice.actions;
 
 export default authSlice.reducer;
