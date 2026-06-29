@@ -95,7 +95,7 @@ function ResetPassword() {
     await dispatch(
       resetPasswordThunk({
         reset_token: resetPasswordToken,
-        new_password: newPassword,
+        password: newPassword,
         confirm_password: confirmPassword,
       }),
     ).unwrap();

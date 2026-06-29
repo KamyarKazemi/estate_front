@@ -5,7 +5,7 @@ const URL = import.meta.env.VITE_BACKEND_URL_RESET_PASSWORD;
 
 interface ResetPasswordPayload {
   reset_token: string;
-  new_password: string;
+  password: string;
   confirm_password: string;
 }
 
@@ -15,6 +15,7 @@ export const resetPasswordThunk = createAsyncThunk<
   { rejectValue: string }
 >("resetPassword/setPassword", async (payload, { rejectWithValue }) => {
   try {
+    console.log("reset password payload:", payload);
     await axios.post(URL, payload);
   } catch (error) {
     if (axios.isAxiosError(error)) {
