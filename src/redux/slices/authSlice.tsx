@@ -39,7 +39,7 @@ interface AuthState {
 
   refreshingToken: boolean;
 
-  updateProfileThunk: boolean;
+  // updateProfileThunk: boolean;
   updatingProfile: boolean;
 
   //
@@ -74,7 +74,7 @@ const initialState: AuthState = {
 
   refreshingToken: false,
 
-  updateProfileThunk: false,
+  // updateProfileThunk: false,
   updatingProfile: false,
 
   //
@@ -112,8 +112,14 @@ const authSlice = createSlice({
       state.loading = false;
       state.refreshingToken = false;
 
-      state.updateProfileThunk = false;
+      // state.updateProfileThunk = false;
       state.updatingProfile = false;
+
+      state.resetOtpSessionToken = null;
+      state.resetPasswordToken = null;
+      state.sendingResetPhone = false;
+      state.verifyingResetOtp = false;
+      state.resettingPassword = false;
 
       state.error = null;
 
@@ -146,7 +152,7 @@ const authSlice = createSlice({
       state.loading = false;
       state.refreshingToken = false;
 
-      state.updateProfileThunk = false;
+      // state.updateProfileThunk = false;
       state.updatingProfile = false;
     },
 
@@ -286,12 +292,12 @@ const authSlice = createSlice({
       })
 
       .addCase(updateProfileThunk.pending, (state) => {
-        state.updateProfileThunk = false;
+        // state.updateProfileThunk = false;
         state.updatingProfile = true;
         state.error = null;
       })
       .addCase(updateProfileThunk.fulfilled, (state, action) => {
-        state.updateProfileThunk = true;
+        // state.updateProfileThunk = true;
         state.updatingProfile = false;
 
         state.user = {
@@ -306,7 +312,7 @@ const authSlice = createSlice({
         });
       })
       .addCase(updateProfileThunk.rejected, (state, action) => {
-        state.updateProfileThunk = false;
+        // state.updateProfileThunk = false;
         state.updatingProfile = false;
         state.error = action.payload as string;
       })

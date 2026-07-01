@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { passwordRegex } from "../../../components/layout/Profile/hooks/useSignupValidation";
+import { passwordRegex } from "../Profile/hooks/useSignupValidation";
 
 type Props = {
   newPassword: string;
@@ -63,7 +63,7 @@ export function NewPasswordStep({
           <label className="mb-3 block text-sm font-medium text-white">
             رمز عبور جدید
           </label>
-          <div className="realtive">
+          <div className="relative">
             <motion.input
               type={showNew ? "text" : "password"}
               value={newPassword}
@@ -78,7 +78,7 @@ export function NewPasswordStep({
               type="button"
               onClick={() => setShowNew((v) => !v)}
               tabIndex={-1}
-              className="absolute left-3 top1/2 -translate-y-1/2 text-xs text-slate-400 transition-colors hover:text-sky-200"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 transition-colors hover:text-sky-200"
             >
               {showNew ? "نمایش" : "پنهان"}
             </button>
@@ -95,7 +95,7 @@ export function NewPasswordStep({
         </div>
 
         <div>
-          <label className="mb-3 block text-sm fornt-medium text-white">
+          <label className="mb-3 block text-sm font-medium text-white">
             تکرار رمز عبور جدید
           </label>
           <div className="relative">
@@ -113,7 +113,7 @@ export function NewPasswordStep({
               type="button"
               onClick={() => setShowConfirm((v) => !v)}
               tabIndex={-1}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 transition-colors hover: text-sky-200"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 transition-colors hover:text-sky-200"
             >
               {showConfirm ? "نمایش" : "پنهان"}
             </button>

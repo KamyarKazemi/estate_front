@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -31,9 +31,7 @@ function ResetPassword() {
   } = useSelector((state: RootState) => state.auth);
 
   // clean up the reset flow state when the user leaves this page
-  const didMountRef = useRef(false);
   useEffect(() => {
-    didMountRef.current = true;
     return () => {
       dispatch(resetPasswordFlow());
     };
