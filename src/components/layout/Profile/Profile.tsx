@@ -35,6 +35,7 @@ function Profile() {
     completingRegister,
     bootstrappingProfile,
     access_token,
+    error,
   } = useSelector((state: RootState) => state.auth);
 
   /* ---------------- نوع کاربر + حالت ---------------- */
@@ -64,7 +65,6 @@ function Profile() {
     if (mode === "login") {
       return otp_session_token ? 2 : 1;
     }
-
     return registration_token ? 3 : otp_session_token ? 2 : 1;
   })();
 
@@ -90,13 +90,16 @@ function Profile() {
 
   const handlePhoneSubmit = async () => {
     if (!isPhoneFormValid || sendingPhone) return;
-
-    if (mode === "login") {
-      await dispatch(
-        sendNumberLoginThunk({ phone_number: phone, password: loginPassword }),
-      ).unwrap();
-    } else {
-      await dispatch(sendNumberThunk(phone)).unwrap();
+    try {
+      if (mode === "login") {
+        await dispatch(
+          sendNumberLoginThunk({ phone_number: phone, password: loginPassword }),
+        ).unwrap();
+      } else {
+        await dispatch(sendNumberThunk(phone)).unwrap();
+      }
+    } catch {
+      // error lands in state.error via Redux
     }
   };
 
@@ -114,31 +117,21 @@ function Profile() {
 
   const handleOtpSubmit = async () => {
     if (!otp_session_token || !isOtpComplete || verifyingOtp) return;
-
     const otp_code = otp.join("");
-
-    if (mode === "login") {
-      const result = await dispatch(
-        sendOtpLoginThunk({
-          otp_session_token,
-          otp_code,
-        }),
+    try {
+      if (mode === "login") {
+        await dispatch(
+          sendOtpLoginThunk({ otp_session_token, otp_code }),
+        ).unwrap();
+        navigate("/dashboard");
+        return;
+      }
+      await dispatch(
+        sendOtpThunk({ otp_session_token, otp_code }),
       ).unwrap();
-
-      console.log("✅ Login success:", result);
-
-      navigate("/dashboard");
-
-      return;
+    } catch {
+      // error lands in state.error via Redux
     }
-
-    // signup flow
-    await dispatch(
-      sendOtpThunk({
-        otp_session_token,
-        otp_code,
-      }),
-    ).unwrap();
   };
 
   /* ---------------- اطلاعات ثبت نام ---------------- */
@@ -159,29 +152,30 @@ function Profile() {
   /* ---------------- تکمیل ثبت نام ---------------- */
 
   const handleCompleteSignup = async () => {
-    if (!registration_token || !isPersonalInfoValid || completingRegister) {
-      return;
+    if (!registration_token || !isPersonalInfoValid || completingRegister) return;
+    try {
+      const result = await dispatch(
+        completeRegister({
+          registration_token,
+          first_name: signupValues.firstName,
+          last_name: signupValues.lastName,
+          email: normalizedEmail,
+          role: clientType,
+          password: signupValues.password,
+          confirm_password: signupValues.confirmPassword,
+        }),
+      ).unwrap();
+
+      if (result.access_token) {
+        navigate("/dashboard");
+        return;
+      }
+
+      setMode("login");
+      setStep(1);
+    } catch {
+      // error lands in state.error via Redux
     }
-
-    const result = await dispatch(
-      completeRegister({
-        registration_token,
-        first_name: signupValues.firstName,
-        last_name: signupValues.lastName,
-        email: normalizedEmail,
-        role: clientType,
-        password: signupValues.password,
-        confirm_password: signupValues.confirmPassword,
-      }),
-    ).unwrap();
-
-    if (result.access_token) {
-      navigate("/dashboard");
-      return;
-    }
-
-    setMode("login");
-    setStep(1);
   };
 
   /* ---------------- ریست جریان احراز هویت هنگام تغییر حالت ---------------- */
@@ -223,7 +217,6 @@ function Profile() {
   /* ---------------- متن هدر ---------------- */
 
   const title = mode === "login" ? "ورود به حساب کاربری" : "ایجاد حساب کاربری";
-
   const subtitle = clientType === "CUSTOMER" ? "پنل کاربران" : "پنل مشاوران";
 
   /* ---------------- UI ---------------- */
@@ -237,7 +230,6 @@ function Profile() {
       dir="rtl"
       className="relative min-h-screen overflow-hidden bg-slate-950 flex items-center justify-center px-3 sm:px-4 py-6 sm:py-10"
     >
-      {/* Ambient glow, matches the header/footer liquid-glass treatment */}
       <motion.div
         className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 rounded-full bg-sky-500/10 blur-[100px]"
         animate={{ opacity: [0.6, 1, 0.6] }}
@@ -300,7 +292,6 @@ function Profile() {
               onChange={setClientType}
               options={clientOptions}
             />
-
             <Toggle value={mode} onChange={setMode} options={modeOptions} />
           </div>
 
@@ -356,6 +347,21 @@ function Profile() {
                 skeletonLoading={bootstrappingProfile}
                 onSubmit={handleCompleteSignup}
               />
+            )}
+          </AnimatePresence>
+
+          {/* Backend error — shown below whichever step is active */}
+          <AnimatePresence>
+            {error && (
+              <motion.p
+                key={error}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center text-sm text-red-400"
+              >
+                {error}
+              </motion.p>
             )}
           </AnimatePresence>
         </motion.div>

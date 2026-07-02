@@ -28,6 +28,7 @@ function ResetPassword() {
     sendingResetPhone,
     verifyingResetOtp,
     resettingPassword,
+    error,
   } = useSelector((state: RootState) => state.auth);
 
   // clean up the reset flow state when the user leaves this page
@@ -65,8 +66,12 @@ function ResetPassword() {
   const isPhoneValid = /^09\d{9}$/.test(phone);
 
   const handlePhoneSubmit = async () => {
-    await dispatch(resetPasswordPhoneThunk(phone)).unwrap();
-    setStep(2);
+    try {
+      await dispatch(resetPasswordPhoneThunk(phone)).unwrap();
+      setStep(2);
+    } catch {
+      // error lands in state.error via Redux
+    }
   };
 
   /* -------- step 2: otp -------- */
@@ -75,13 +80,17 @@ function ResetPassword() {
 
   const handleOtpSubmit = async () => {
     if (!resetOtpSessionToken) return;
-    await dispatch(
-      resetPasswordOtpThunk({
-        otp_session_token: resetOtpSessionToken,
-        otp_code: otp.join(""),
-      }),
-    ).unwrap();
-    setStep(3);
+    try {
+      await dispatch(
+        resetPasswordOtpThunk({
+          otp_session_token: resetOtpSessionToken,
+          otp_code: otp.join(""),
+        }),
+      ).unwrap();
+      setStep(3);
+    } catch {
+      // error lands in state.error via Redux
+    }
   };
 
   /* -------- step 3: new password -------- */
@@ -90,14 +99,18 @@ function ResetPassword() {
 
   const handlePasswordSubmit = async () => {
     if (!resetPasswordToken) return;
-    await dispatch(
-      resetPasswordThunk({
-        reset_token: resetPasswordToken,
-        password: newPassword,
-        confirm_password: confirmPassword,
-      }),
-    ).unwrap();
-    navigate("/dashboard");
+    try {
+      await dispatch(
+        resetPasswordThunk({
+          reset_token: resetPasswordToken,
+          password: newPassword,
+          confirm_password: confirmPassword,
+        }),
+      ).unwrap();
+      navigate("/dashboard");
+    } catch {
+      // error lands in state.error via Redux
+    }
   };
 
   /* -------- UI -------- */
@@ -194,6 +207,21 @@ function ResetPassword() {
                 loading={resettingPassword}
                 onSubmit={handlePasswordSubmit}
               />
+            )}
+          </AnimatePresence>
+
+          {/* Backend error — shown below whichever step is active */}
+          <AnimatePresence>
+            {error && (
+              <motion.p
+                key={error}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-center text-sm text-red-400"
+              >
+                {error}
+              </motion.p>
             )}
           </AnimatePresence>
 

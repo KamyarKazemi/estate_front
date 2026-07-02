@@ -1,7 +1,8 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { getApiErrorMessage } from "../apiError";
 
-const URL = import.meta.env.VITE_BACKEND_URL_LOGIN_FIRST;
+const ENDPOINT = import.meta.env.VITE_BACKEND_URL_LOGIN_FIRST;
 
 interface SendNumberLoginPayload {
   phone_number: string;
@@ -19,20 +20,15 @@ export const sendNumberLoginThunk = createAsyncThunk<
   { rejectValue: string }
 >("login/sendNumber", async ({ phone_number, password }, { rejectWithValue }) => {
   try {
-    const response = await axios.post(URL, {
-      phone_number,
-      password,
-    });
+    const response = await axios.post(ENDPOINT, { phone_number, password });
 
     return {
       phone_number,
       otp_session_token: response.data.otp_session_token,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return rejectWithValue(
-      error?.response?.data?.message ||
-        error?.response?.data ||
-        "ارسال کد تأیید ناموفق بود",
+      getApiErrorMessage(error, "ارسال کد تأیید ناموفق بود.")
     );
   }
 });

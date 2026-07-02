@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import type { Variants } from "motion/react";
 import type { SignupValues } from "../types/types";
@@ -63,6 +63,9 @@ export function PersonalInfoStep({
   skeletonLoading = false,
   onSubmit,
 }: PersonalInfoStepProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const handleChange =
     (field: keyof SignupValues) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setValues((prev) => ({
@@ -141,32 +144,52 @@ export function PersonalInfoStep({
         <label className="mb-2 block text-sm font-medium text-white">
           رمز عبور
         </label>
-        <motion.input
-          type="password"
-          value={values.password}
-          onChange={handleChange("password")}
-          dir="ltr"
-          whileFocus={{ scale: 1.01 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className={`${inputClasses} text-left`}
-          placeholder="••••••••"
-        />
+        <div className="relative">
+          <motion.input
+            type={showPassword ? "text" : "password"}
+            value={values.password}
+            onChange={handleChange("password")}
+            dir="ltr"
+            whileFocus={{ scale: 1.01 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className={`${inputClasses} pl-12 text-left`}
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 transition-colors hover:text-sky-200"
+          >
+            {showPassword ? "پنهان" : "نمایش"}
+          </button>
+        </div>
       </motion.div>
 
       <motion.div variants={fieldVariants}>
         <label className="mb-2 block text-sm font-medium text-white">
           تکرار رمز عبور
         </label>
-        <motion.input
-          type="password"
-          value={values.confirmPassword}
-          onChange={handleChange("confirmPassword")}
-          dir="ltr"
-          whileFocus={{ scale: 1.01 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className={`${inputClasses} text-left`}
-          placeholder="••••••••"
-        />
+        <div className="relative">
+          <motion.input
+            type={showConfirmPassword ? "text" : "password"}
+            value={values.confirmPassword}
+            onChange={handleChange("confirmPassword")}
+            dir="ltr"
+            whileFocus={{ scale: 1.01 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className={`${inputClasses} pl-12 text-left`}
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowConfirmPassword((v) => !v)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 transition-colors hover:text-sky-200"
+          >
+            {showConfirmPassword ? "پنهان" : "نمایش"}
+          </button>
+        </div>
       </motion.div>
 
       <motion.button
