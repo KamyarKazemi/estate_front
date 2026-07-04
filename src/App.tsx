@@ -5,6 +5,7 @@ import Profile from "./components/layout/Profile/Profile";
 import Dashboard from "./components/layout/dashboard/Dashboard";
 import ProtectedRoute from "./components/layout/dashboard/ProtectedRoute";
 import ResetPassword from "./components/layout/dashboard/ResetPassword";
+import ChangePhone from "./components/layout/dashboard/ChangePhone";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
         path: "/profile",
       },
       {
+        element: <ResetPassword />,
+        path: "/reset-password",
+      },
+      {
         element: <ProtectedRoute />,
         children: [
           {
@@ -27,8 +32,8 @@ const router = createBrowserRouter([
             path: "/dashboard",
           },
           {
-            element: <ResetPassword />,
-            path: "/reset-password",
+            element: <ChangePhone />,
+            path: "/change-phone",
           },
         ],
       },

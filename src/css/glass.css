@@ -1,0 +1,217 @@
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: -75deg;
+}
+
+@property --shine-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: -45deg;
+}
+
+:root {
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --dur: 400ms;
+  --bw: clamp(1px, 0.0625em, 4px);
+}
+
+.glass-btn-wrapper {
+  position: relative;
+  display: inline-flex;
+  border-radius: 9999px;
+  background: transparent;
+  transition: all var(--dur) var(--ease);
+}
+
+.glass-btn-wrapper:has(.glass-btn:active) {
+  transform: rotate3d(1, 0, 0, 25deg);
+}
+
+.glass-btn-shadow {
+  --cutoff: 2em;
+  position: absolute;
+  width: calc(100% + var(--cutoff));
+  height: calc(100% + var(--cutoff));
+  top: calc(0% - var(--cutoff) / 2);
+  left: calc(0% - var(--cutoff) / 2);
+  filter: blur(clamp(2px, 0.125em, 12px));
+  overflow: visible;
+  pointer-events: none;
+}
+
+.glass-btn-shadow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+
+  width: calc(100% - var(--cutoff) - 0.25em);
+  height: calc(100% - var(--cutoff) - 0.25em);
+
+  top: calc(var(--cutoff) - 0.5em);
+  left: calc(var(--cutoff) - 0.875em);
+
+  padding: 0.125em;
+  box-sizing: border-box;
+
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+
+  transition: all var(--dur) var(--ease);
+}
+
+.glass-btn-wrapper:has(.glass-btn:hover) .glass-btn-shadow {
+  filter: blur(clamp(2px, 0.0625em, 6px));
+}
+
+.glass-btn-wrapper:has(.glass-btn:hover) .glass-btn-shadow::after {
+  top: calc(var(--cutoff) - 0.875em);
+}
+
+.glass-btn-wrapper:has(.glass-btn:active) .glass-btn-shadow::after {
+  top: calc(var(--cutoff) - 0.5em);
+  opacity: 0.75;
+}
+
+.glass-btn {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  border-radius: 9999px;
+  overflow: hidden;
+
+  background: linear-gradient(
+    -75deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.05)
+  );
+
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+
+  box-shadow:
+    inset 0 2px 2px rgba(0, 0, 0, 0.05),
+    inset 0 -2px 2px rgba(255, 255, 255, 0.5),
+    0 4px 2px -2px rgba(0, 0, 0, 0.2),
+    inset 0 0 8px rgba(255, 255, 255, 0.25);
+
+  transition:
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    backdrop-filter var(--dur) var(--ease),
+    --border-angle 500ms ease;
+}
+
+.glass-btn:hover {
+  transform: scale(0.98);
+
+  backdrop-filter: blur(1px);
+
+  box-shadow:
+    inset 0 2px 2px rgba(0, 0, 0, 0.05),
+    inset 0 -2px 2px rgba(255, 255, 255, 0.5),
+    0 2px 1px rgba(0, 0, 0, 0.25),
+    inset 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.glass-btn:active {
+  transform: scale(0.96);
+}
+
+.glass-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  border-radius: inherit;
+
+  padding: var(--bw);
+
+  background:
+    conic-gradient(
+      from var(--border-angle),
+      rgba(0, 0, 0, 0.45),
+      transparent 5% 40%,
+      rgba(0, 0, 0, 0.45) 50%,
+      transparent 60% 95%,
+      rgba(0, 0, 0, 0.45)
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5));
+
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+
+  mask-composite: exclude;
+
+  transition:
+    --border-angle 500ms ease,
+    all var(--dur) var(--ease);
+
+  box-shadow: inset 0 0 0 calc(var(--bw) / 2) rgba(255, 255, 255, 0.5);
+}
+
+.glass-btn:hover::after {
+  --border-angle: -125deg;
+}
+
+.glass-btn__label {
+  position: relative;
+  display: block;
+
+  padding: 0.9rem 1.8rem;
+
+  font-size: 1rem;
+  font-weight: 600;
+
+  color: #ffffff;
+
+  text-align: center;
+  user-select: none;
+
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+
+  z-index: 2;
+}
+
+.glass-btn__label::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 2px;
+
+  border-radius: inherit;
+
+  background: linear-gradient(
+    var(--shine-angle),
+    transparent,
+    rgba(255, 255, 255, 0.45) 45%,
+    transparent 60%
+  );
+
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
+
+  pointer-events: none;
+
+  transition:
+    background-position 500ms var(--ease),
+    --shine-angle 500ms var(--ease);
+
+  mix-blend-mode: screen;
+}
+
+.glass-btn:hover .glass-btn__label::after {
+  background-position: 25% 50%;
+}
+
+.glass-btn:active .glass-btn__label::after {
+  background-position: 50% 15%;
+  --shine-angle: -15deg;
+}

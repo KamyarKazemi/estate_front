@@ -4,6 +4,7 @@ import type { AppDispatch, RootState } from "../../../redux/store";
 import { resetAuth } from "../../../redux/slices/authSlice";
 import { updateProfileThunk } from "../../../redux/thunks/updateProfileThunk";
 import { useState } from "react";
+import { CiEdit } from "react-icons/ci";
 
 const ROLE_LABELS: Record<string, string> = {
   CUSTOMER: "مشتری",
@@ -79,7 +80,8 @@ function Dashboard() {
     }
   };
 
-  const readOnlyCard = (label: string, value: string) => (
+  // onEdit is optional — cards without it show no icon
+  const readOnlyCard = (label: string, value: string, onEdit?: () => void) => (
     <div
       key={label}
       className="
@@ -92,7 +94,18 @@ function Dashboard() {
       <p className="text-xs text-slate-500 transition-colors duration-300 group-hover/card:text-sky-400">
         {label}
       </p>
-      <p className="mt-2 text-base text-slate-100">{value || "-"}</p>
+      <div className="mt-2 flex items-center justify-between">
+        <p className="text-base text-slate-100">{value || "-"}</p>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="text-slate-500 transition-colors duration-200 hover:text-sky-400"
+          >
+            <CiEdit className="text-xl" />
+          </button>
+        )}
+      </div>
     </div>
   );
 
@@ -152,14 +165,17 @@ function Dashboard() {
                 {editInput("نام", "first_name")}
                 {editInput("نام خانوادگی", "last_name")}
                 {editInput("ایمیل", "email")}
+                {/* phone and role are always read-only */}
                 {readOnlyCard("شماره موبایل", user?.phone_number ?? "")}
                 {readOnlyCard("نوع حساب", roleLabel)}
               </>
             ) : (
               <>
-                {readOnlyCard("نام و نام خانوادگی", fullName)}
-                {readOnlyCard("شماره موبایل", user?.phone_number ?? "")}
-                {readOnlyCard("ایمیل", user?.email ?? "")}
+                {readOnlyCard("نام و نام خانوادگی", fullName, handleEditStart)}
+                {readOnlyCard("شماره موبایل", user?.phone_number ?? "", () =>
+                  navigate("/change-phone"),
+                )}
+                {readOnlyCard("ایمیل", user?.email ?? "", handleEditStart)}
                 {readOnlyCard("نوع حساب", roleLabel)}
               </>
             )}
@@ -197,17 +213,6 @@ function Dashboard() {
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={handleEditStart}
-                  className="
-                    w-fit rounded-xl border border-sky-500/20 bg-sky-500/5 px-5 py-2.5
-                    text-sm text-sky-300 transition-all duration-300
-                    hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-sky-200
-                  "
-                >
-                  ویرایش اطلاعات
-                </button>
                 <Link
                   to="/"
                   className="
@@ -231,9 +236,11 @@ function Dashboard() {
                 </button>
                 <button
                   type="button"
-                  className=" w-fit rounded-xl border border-sky-500/20 bg-sky-500/5 px-5 py-2.5
+                  className="
+                    w-fit rounded-xl border border-sky-500/20 bg-sky-500/5 px-5 py-2.5
                     text-sm text-sky-300 transition-all duration-300
-                    hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-sky-200"
+                    hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-sky-200
+                  "
                   onClick={() => navigate("/reset-password")}
                 >
                   تغییر رمز عبور

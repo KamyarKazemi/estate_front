@@ -2,6 +2,8 @@ import { useState, type ChangeEvent, type FormEvent } from "react";
 import { motion } from "motion/react";
 import type { Mode } from "../types/types";
 import { passwordRegex } from "../hooks/useSignupValidation";
+import GlassButton from "../../../../css/GlassButton";
+import { useNavigate } from "react-router-dom";
 
 export type PhoneStepProps = {
   phone: string;
@@ -63,6 +65,8 @@ export function PhoneStep({
   skeletonLoading = false,
   onSubmit,
 }: PhoneStepProps) {
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const isLogin = mode === "login";
 
@@ -135,52 +139,60 @@ export function PhoneStep({
       </div>
 
       {isLogin && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.22, ease: "easeOut" }}
-        >
-          <label className="mb-3 block text-sm font-medium text-white">
-            رمز عبور
-          </label>
+        <>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            <label className="mb-3 block text-sm font-medium text-white">
+              رمز عبور
+            </label>
 
-          <div className="relative">
-            <motion.input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              dir="ltr"
-              whileFocus={{ scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className={`${inputClasses} pl-12`}
-            />
+            <div className="relative">
+              <motion.input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                dir="ltr"
+                whileFocus={{ scale: 1.01 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className={`${inputClasses} pl-12`}
+              />
 
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              tabIndex={-1}
-              className="
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                className="
                 absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400
                 transition-colors duration-200 hover:text-sky-200
               "
-            >
-              {showPassword ? "پنهان" : "نمایش"}
-            </button>
-          </div>
+              >
+                {showPassword ? "پنهان" : "نمایش"}
+              </button>
+            </div>
 
-          {password.length > 0 && !isPasswordValid && (
-            <motion.p
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-2 text-sm text-red-400"
-            >
-              رمز عبور باید حداقل ۸ کاراکتر و شامل حروف بزرگ، کوچک و عدد باشد.
-            </motion.p>
-          )}
-        </motion.div>
+            {password.length > 0 && !isPasswordValid && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 text-sm text-red-400"
+              >
+                رمز عبور باید حداقل ۸ کاراکتر و شامل حروف بزرگ، کوچک و عدد باشد.
+              </motion.p>
+            )}
+          </motion.div>
+
+          <motion.div className="flex justify-center items-center w-full">
+            <GlassButton onClick={() => navigate("/reset-password")}>
+              فراموشی رمز
+            </GlassButton>
+          </motion.div>
+        </>
       )}
 
       <motion.button
