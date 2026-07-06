@@ -20,6 +20,8 @@ import {
 } from "./authStorage";
 
 import type { StoredAuth, UserProfile } from "./authStorage";
+import { requestDeleteAccountThunk } from "./thunks/requestDeleteAccountThunk";
+import { confirmDeleteAccountThunk } from "./thunks/confirmDeleteAccountThunk";
 
 interface AuthState {
   user: UserProfile | null;
@@ -47,6 +49,10 @@ interface AuthState {
   changePhoneOtpSessionToken: string | null;
   sendingChangePhone: boolean;
   verifyingChangePhoneOtp: boolean;
+
+  requestingDeleteAccount: boolean;
+  confirmingDeleteAccount: boolean;
+  deleteAccountOtpSessionToken: string | null;
 
   error: string | null;
 }
@@ -80,6 +86,11 @@ const initialState: AuthState = {
   sendingChangePhone: false,
   verifyingChangePhoneOtp: false,
 
+  requestingDeleteAccount: false,
+  confirmingDeleteAccount: false,
+
+  deleteAccountOtpSessionToken: null,
+
   error: null,
 };
 
@@ -110,6 +121,8 @@ const authSlice = createSlice({
       state.changePhoneOtpSessionToken = null;
       state.sendingChangePhone = false;
       state.verifyingChangePhoneOtp = false;
+      state.requestingDeleteAccount = false;
+      state.confirmingDeleteAccount = false;
       state.error = null;
       clearStoredAuth();
     },
@@ -137,6 +150,8 @@ const authSlice = createSlice({
       state.loading = false;
       state.refreshingToken = false;
       state.updatingProfile = false;
+      state.requestingDeleteAccount = false;
+      state.confirmingDeleteAccount = false;
     },
 
     resetPasswordFlow: (state) => {
@@ -210,7 +225,8 @@ const authSlice = createSlice({
       .addCase(completeRegister.fulfilled, (state, action) => {
         state.completingRegister = false;
         const accessToken = action.payload.access_token ?? state.access_token;
-        const refreshToken = action.payload.refresh_token ?? state.refresh_token;
+        const refreshToken =
+          action.payload.refresh_token ?? state.refresh_token;
         const user = action.payload.user ?? state.user;
         state.access_token = accessToken;
         state.refresh_token = refreshToken;
@@ -348,7 +364,7 @@ const authSlice = createSlice({
         if (state.user) {
           state.user = {
             ...state.user,
-            phone_number: action.payload.new_phone_number,
+            phone_number: action.payload.phone_number,
           };
           persistStoredAuth({
             accessToken: state.access_token,
@@ -359,6 +375,44 @@ const authSlice = createSlice({
       })
       .addCase(changePhoneOtpThunk.rejected, (state, action) => {
         state.verifyingChangePhoneOtp = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(requestDeleteAccountThunk.pending, (state) => {
+        state.requestingDeleteAccount = true;
+        state.error = null;
+      })
+
+      .addCase(requestDeleteAccountThunk.fulfilled, (state, action) => {
+        state.requestingDeleteAccount = false;
+
+        state.deleteAccountOtpSessionToken = action.payload.otp_session_token;
+      })
+
+      .addCase(requestDeleteAccountThunk.rejected, (state, action) => {
+        state.requestingDeleteAccount = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(confirmDeleteAccountThunk.pending, (state) => {
+        state.confirmingDeleteAccount = true;
+        state.error = null;
+      })
+
+      .addCase(confirmDeleteAccountThunk.fulfilled, (state) => {
+        state.confirmingDeleteAccount = false;
+
+        state.deleteAccountOtpSessionToken = null;
+
+        state.user = null;
+        state.access_token = null;
+        state.refresh_token = null;
+
+        clearStoredAuth();
+      })
+
+      .addCase(confirmDeleteAccountThunk.rejected, (state, action) => {
+        state.confirmingDeleteAccount = false;
         state.error = action.payload as string;
       });
   },

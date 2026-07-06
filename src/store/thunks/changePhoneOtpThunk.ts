@@ -3,16 +3,16 @@ import axios from "axios";
 import { getApiErrorMessage } from "../apiError";
 import type { RootState } from "..";
 
-const ENDPOINT = import.meta.env.VITE_BACKEND_URL_CHANGE_PHONE_OTP;
+const ENDPOINT = import.meta.env.VITE_BACKEND_URL_CHANGE_NUMBER_SECOND;
 
 interface ChangePhoneOtpPayload {
   otp_session_token: string;
   otp_code: string;
-  new_phone_number: string;
+  phone_number: string;
 }
 
 interface ChangePhoneOtpResponse {
-  new_phone_number: string;
+  phone_number: string;
 }
 
 export const changePhoneOtpThunk = createAsyncThunk<
@@ -21,7 +21,10 @@ export const changePhoneOtpThunk = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >(
   "changePhone/verifyOtp",
-  async ({ otp_session_token, otp_code, new_phone_number }, { getState, rejectWithValue }) => {
+  async (
+    { otp_session_token, otp_code, phone_number },
+    { getState, rejectWithValue },
+  ) => {
     const token = getState().auth.access_token;
 
     if (!token) {
@@ -35,11 +38,9 @@ export const changePhoneOtpThunk = createAsyncThunk<
         { headers: { Authorization: `Bearer ${token}` } },
       );
       // return the new phone number so the slice can update user state
-      return { new_phone_number };
+      return { phone_number };
     } catch (error: unknown) {
-      return rejectWithValue(
-        getApiErrorMessage(error, "تأیید کد ناموفق بود.")
-      );
+      return rejectWithValue(getApiErrorMessage(error, "تأیید کد ناموفق بود."));
     }
   },
 );

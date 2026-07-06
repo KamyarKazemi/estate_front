@@ -6,6 +6,7 @@ import Dashboard from "./features/dashboard/Dashboard";
 import ProtectedRoute from "./features/dashboard/ProtectedRoute";
 import ResetPassword from "./features/reset-password/ResetPassword";
 import ChangePhone from "./features/change-phone/ChangePhone";
+import DeleteAccount from "./features/delete-account/DeleteAccount";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,10 @@ const router = createBrowserRouter([
           {
             path: "/change-phone",
             element: <ChangePhone />,
+          },
+          {
+            path: "/delete-account",
+            element: <DeleteAccount />,
           },
         ],
       },

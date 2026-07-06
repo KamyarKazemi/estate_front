@@ -5,6 +5,7 @@ import { resetAuth } from "../../store/authSlice";
 import { updateProfileThunk } from "../../store/thunks/updateProfileThunk";
 import { useState } from "react";
 import { CiEdit } from "react-icons/ci";
+import { requestDeleteAccountThunk } from "../../store/thunks/requestDeleteAccountThunk";
 
 const ROLE_LABELS: Record<string, string> = {
   CUSTOMER: "مشتری",
@@ -16,14 +17,25 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const user = useSelector((state: RootState) => state.auth.user);
-  const updatingProfile = useSelector((state: RootState) => state.auth.updatingProfile);
+  const updatingProfile = useSelector(
+    (state: RootState) => state.auth.updatingProfile,
+  );
+  const { requestingDeleteAccount } = useSelector(
+    (state: RootState) => state.auth,
+  );
 
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+  const fullName = [user?.first_name, user?.last_name]
+    .filter(Boolean)
+    .join(" ");
   const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : "-";
 
   const [isEditing, setIsEditing] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({ email: "", first_name: "", last_name: "" });
+  const [editValues, setEditValues] = useState({
+    email: "",
+    first_name: "",
+    last_name: "",
+  });
 
   const handleLogout = () => {
     dispatch(resetAuth());
@@ -40,16 +52,33 @@ function Dashboard() {
     setIsEditing(true);
   };
 
+  const handleDelete = async () => {
+    try {
+      await dispatch(requestDeleteAccountThunk()).unwrap();
+
+      navigate("/delete-account");
+    } catch (error) {
+      console.error("Error requesting account deletion:", error);
+    }
+  };
+
   const handleCancel = () => {
     setIsEditing(false);
     setEditError(null);
   };
 
   const handleSave = async () => {
-    const changedFields: { email?: string; first_name?: string; last_name?: string } = {};
-    if (editValues.email !== (user?.email ?? "")) changedFields.email = editValues.email;
-    if (editValues.first_name !== (user?.first_name ?? "")) changedFields.first_name = editValues.first_name;
-    if (editValues.last_name !== (user?.last_name ?? "")) changedFields.last_name = editValues.last_name;
+    const changedFields: {
+      email?: string;
+      first_name?: string;
+      last_name?: string;
+    } = {};
+    if (editValues.email !== (user?.email ?? ""))
+      changedFields.email = editValues.email;
+    if (editValues.first_name !== (user?.first_name ?? ""))
+      changedFields.first_name = editValues.first_name;
+    if (editValues.last_name !== (user?.last_name ?? ""))
+      changedFields.last_name = editValues.last_name;
 
     if (Object.keys(changedFields).length === 0) {
       setEditError("هیچ تغییری اعمال نشده است.");
@@ -93,13 +122,18 @@ function Dashboard() {
     </div>
   );
 
-  const editInput = (label: string, field: "email" | "first_name" | "last_name") => (
+  const editInput = (
+    label: string,
+    field: "email" | "first_name" | "last_name",
+  ) => (
     <div className="rounded-2xl border border-sky-500/30 bg-white/5 p-5 backdrop-blur-sm">
       <label className="text-xs text-sky-400">{label}</label>
       <input
         type="text"
         value={editValues[field]}
-        onChange={(e) => setEditValues((prev) => ({ ...prev, [field]: e.target.value }))}
+        onChange={(e) =>
+          setEditValues((prev) => ({ ...prev, [field]: e.target.value }))
+        }
         className="mt-2 w-full bg-transparent text-base text-slate-100 border-none outline-none placeholder-slate-600"
         placeholder={label}
       />
@@ -146,7 +180,9 @@ function Dashboard() {
             ) : (
               <>
                 {readOnlyCard("نام و نام خانوادگی", fullName, handleEditStart)}
-                {readOnlyCard("شماره موبایل", user?.phone_number ?? "", () => navigate("/change-phone"))}
+                {readOnlyCard("شماره موبایل", user?.phone_number ?? "", () =>
+                  navigate("/change-phone"),
+                )}
                 {readOnlyCard("ایمیل", user?.email ?? "", handleEditStart)}
                 {readOnlyCard("نوع حساب", roleLabel)}
               </>
@@ -205,6 +241,21 @@ function Dashboard() {
                   "
                 >
                   خروج از حساب کاربری
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={requestingDeleteAccount}
+                  className="
+    w-fit rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-2.5
+    text-sm text-red-300 transition-all duration-300
+    hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-200
+    disabled:cursor-not-allowed disabled:opacity-50
+  "
+                >
+                  {requestingDeleteAccount
+                    ? "در حال ارسال..."
+                    : "حذف حساب کاربری"}
                 </button>
                 <button
                   type="button"
