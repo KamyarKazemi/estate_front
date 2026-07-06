@@ -1,0 +1,11 @@
+export interface SignupValues {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export type ClientType = "CUSTOMER" | "AGENT";
+export type Mode = "login" | "signup";
+export type Step = 1 | 2 | 3;

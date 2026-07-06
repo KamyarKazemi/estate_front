@@ -1,11 +1,11 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Root from "./layout/Root";
-import Home from "./components/layout/main/Home";
-import Profile from "./components/layout/Profile/Profile";
-import Dashboard from "./components/layout/dashboard/Dashboard";
-import ProtectedRoute from "./components/layout/dashboard/ProtectedRoute";
-import ResetPassword from "./components/layout/dashboard/ResetPassword";
-import ChangePhone from "./components/layout/dashboard/ChangePhone";
+import Home from "./pages/Home";
+import AuthPage from "./features/auth/AuthPage";
+import Dashboard from "./features/dashboard/Dashboard";
+import ProtectedRoute from "./features/dashboard/ProtectedRoute";
+import ResetPassword from "./features/reset-password/ResetPassword";
+import ChangePhone from "./features/change-phone/ChangePhone";
 
 const router = createBrowserRouter([
   {
@@ -17,23 +17,23 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
-        element: <Profile />,
         path: "/profile",
+        element: <AuthPage />,
       },
       {
-        element: <ResetPassword />,
         path: "/reset-password",
+        element: <ResetPassword />,
       },
       {
         element: <ProtectedRoute />,
         children: [
           {
-            element: <Dashboard />,
             path: "/dashboard",
+            element: <Dashboard />,
           },
           {
-            element: <ChangePhone />,
             path: "/change-phone",
+            element: <ChangePhone />,
           },
         ],
       },

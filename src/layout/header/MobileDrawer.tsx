@@ -1,0 +1,134 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { FaAngleDown } from "react-icons/fa6";
+import type { RootState } from "../../store";
+
+const icons = { dropdownAngleDown: <FaAngleDown /> };
+
+interface MobileDrawerProps {
+  isMobileMenuMounted: boolean;
+  isMobileMenuOpen: boolean;
+  isMobileListingsOpen: boolean;
+  mobileMenuRef: React.RefObject<HTMLDivElement | null>;
+  setIsMobileMenuMounted: (mounted: boolean) => void;
+  setIsMobileListingsOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  closeMobileMenu: () => void;
+}
+
+export default function MobileDrawer({
+  isMobileMenuMounted, isMobileMenuOpen, isMobileListingsOpen,
+  mobileMenuRef, setIsMobileMenuMounted, setIsMobileListingsOpen, closeMobileMenu,
+}: MobileDrawerProps) {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isSignedIn = useSelector((state: RootState) => Boolean(state.auth.access_token));
+
+  if (!isMobileMenuMounted) return null;
+
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+  const accountLabel = fullName || user?.username || "پروفایل";
+
+  return (
+    <div
+      ref={mobileMenuRef}
+      onTransitionEnd={(e) => {
+        if (e.target === e.currentTarget && !isMobileMenuOpen) setIsMobileMenuMounted(false);
+      }}
+      className={`
+        absolute top-full left-0 right-0 mt-3 md:hidden
+        rounded-4xl border border-white/20
+        bg-slate-900/90 backdrop-blur-xl
+        shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)]
+        overflow-hidden origin-top
+        transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+        ${isMobileMenuOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 -translate-y-4 scale-[0.96] pointer-events-none"}
+      `}
+    >
+      <div className="absolute inset-0 bg-linear-to-b from-white/3 to-transparent pointer-events-none" />
+
+      <div className="p-3 relative z-10">
+        <div className="mb-2 rounded-2xl bg-white/3 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 border border-white/5">
+          Overview
+        </div>
+
+        <ul className="flex flex-col gap-1.5">
+          {[
+            { label: "خانه", to: "/", delay: "80ms" },
+            { label: "آنالیز ها", to: "/analytics", delay: "180ms" },
+          ].map(({ label, to, delay }) => (
+            <li
+              key={label}
+              className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+              style={{ transitionDelay: delay }}
+            >
+              <Link
+                to={to}
+                className="flex items-center justify-between rounded-2xl px-4 py-3.5 text-sm text-slate-100 font-light tracking-wide hover:bg-white/5 active:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-300"
+                onClick={closeMobileMenu}
+              >
+                <span>{label}</span>
+                <span className="text-slate-500 text-xs">←</span>
+              </Link>
+            </li>
+          ))}
+
+          {/* Listings dropdown */}
+          <li
+            className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+            style={{ transitionDelay: "130ms" }}
+          >
+            <div className="rounded-2xl border border-transparent">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between rounded-2xl px-4 py-3.5 text-sm text-slate-100 font-light tracking-wide hover:bg-white/5 transition-all duration-300 outline-none"
+                onClick={() => setIsMobileListingsOpen((prev) => !prev)}
+              >
+                <span>آگهی ها</span>
+                <span className={`transition-transform duration-500 text-slate-400 ${isMobileListingsOpen ? "rotate-180 text-sky-400" : "rotate-0"}`}>
+                  {icons.dropdownAngleDown}
+                </span>
+              </button>
+
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileListingsOpen ? "max-h-75 opacity-100 mt-1 pe-4 border-r-2 border-sky-500/40 me-5" : "max-h-0 opacity-0 pointer-events-none"}`}
+              >
+                <div className="flex flex-col gap-1 py-1 ps-2 pe-2">
+                  {[
+                    { label: "بخر", to: "/listings/buy" },
+                    { label: "اجاره کن", to: "/listings/rent" },
+                    { label: "نو ساز ها", to: "/listings/new" },
+                    { label: "املاک لوکس", to: "/listings/luxury" },
+                  ].map(({ label, to }) => (
+                    <Link
+                      key={label}
+                      to={to}
+                      className="rounded-xl px-4 py-3 text-sm text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-300"
+                      onClick={closeMobileMenu}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </li>
+
+          {/* Profile */}
+          <li
+            className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isMobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
+            style={{ transitionDelay: "230ms" }}
+          >
+            <Link
+              to={isSignedIn ? "/dashboard" : "/profile"}
+              className="flex items-center justify-between rounded-2xl px-4 py-3.5 text-sm text-slate-100 font-light tracking-wide hover:bg-white/5 border border-transparent hover:border-white/10 transition-all duration-300"
+              onClick={closeMobileMenu}
+            >
+              <span className="min-w-0 truncate">{isSignedIn ? accountLabel : "پروفایل"}</span>
+              <span className="text-slate-500 text-xs">←</span>
+            </Link>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
