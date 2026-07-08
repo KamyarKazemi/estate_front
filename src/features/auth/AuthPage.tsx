@@ -10,7 +10,10 @@ import { StepNavigation } from "./components/StepNavigation";
 import { Toggle } from "./ui/Toggle";
 
 import { useOtp } from "./hooks/useOtp";
-import { useSignupValidation, passwordRegex } from "./hooks/useSignupValidation";
+import {
+  useSignupValidation,
+  passwordRegex,
+} from "./hooks/useSignupValidation";
 
 import type { ClientType, Mode, Step, SignupValues } from "./types";
 
@@ -74,14 +77,20 @@ function AuthPage() {
   const [loginPassword, setLoginPassword] = useState("");
 
   const isPhoneValid = /^09\d{9}$/.test(phone);
-  const isLoginPasswordValid = mode !== "login" || passwordRegex.test(loginPassword);
+  const isLoginPasswordValid =
+    mode !== "login" || passwordRegex.test(loginPassword);
   const isPhoneFormValid = isPhoneValid && isLoginPasswordValid;
 
   const handlePhoneSubmit = async () => {
     if (!isPhoneFormValid || sendingPhone) return;
     try {
       if (mode === "login") {
-        await dispatch(sendNumberLoginThunk({ phone_number: phone, password: loginPassword })).unwrap();
+        await dispatch(
+          sendNumberLoginThunk({
+            phone_number: phone,
+            password: loginPassword,
+          }),
+        ).unwrap();
       } else {
         await dispatch(sendNumberThunk(phone)).unwrap();
       }
@@ -91,14 +100,24 @@ function AuthPage() {
   };
 
   /* -------- step 2: otp -------- */
-  const { otp, otpRefs, isComplete: isOtpComplete, handleChange, handleKeyDown, handlePaste, resetOtp } = useOtp(5);
+  const {
+    otp,
+    otpRefs,
+    isComplete: isOtpComplete,
+    handleChange,
+    handleKeyDown,
+    handlePaste,
+    resetOtp,
+  } = useOtp(5);
 
   const handleOtpSubmit = async () => {
     if (!otp_session_token || !isOtpComplete || verifyingOtp) return;
     const otp_code = otp.join("");
     try {
       if (mode === "login") {
-        await dispatch(sendOtpLoginThunk({ otp_session_token, otp_code })).unwrap();
+        await dispatch(
+          sendOtpLoginThunk({ otp_session_token, otp_code }),
+        ).unwrap();
         navigate("/dashboard");
         return;
       }
@@ -117,10 +136,12 @@ function AuthPage() {
     confirmPassword: "",
   });
 
-  const { normalizedEmail, isPersonalInfoValid } = useSignupValidation(signupValues);
+  const { normalizedEmail, isPersonalInfoValid } =
+    useSignupValidation(signupValues);
 
   const handleCompleteSignup = async () => {
-    if (!registration_token || !isPersonalInfoValid || completingRegister) return;
+    if (!registration_token || !isPersonalInfoValid || completingRegister)
+      return;
     try {
       const result = await dispatch(
         completeRegister({
@@ -149,13 +170,22 @@ function AuthPage() {
   const didMountRef = useRef(false);
 
   useEffect(() => {
-    if (!didMountRef.current) { didMountRef.current = true; return; }
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
     dispatch(resetAuthFlow());
     setStep(1);
     setPhone("");
     setLoginPassword("");
     resetOtp();
-    setSignupValues({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
+    setSignupValues({
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
   }, [mode, clientType, dispatch, resetOtp]);
 
   const clientOptions = [
@@ -186,7 +216,12 @@ function AuthPage() {
       <motion.div
         className="pointer-events-none absolute -bottom-32 -left-32 h-72 w-72 rounded-full bg-sky-500/5 blur-[100px]"
         animate={{ opacity: [0.4, 0.8, 0.4] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        transition={{
+          duration: 9,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1,
+        }}
       />
 
       <div className="relative z-10 w-full max-w-xl">
@@ -230,7 +265,11 @@ function AuthPage() {
           </div>
 
           <div className="space-y-3 sm:space-y-4">
-            <Toggle value={clientType} onChange={setClientType} options={clientOptions} />
+            <Toggle
+              value={clientType}
+              onChange={setClientType}
+              options={clientOptions}
+            />
             <Toggle value={mode} onChange={setMode} options={modeOptions} />
           </div>
 
