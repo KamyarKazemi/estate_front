@@ -4,8 +4,10 @@ import type { AppDispatch, RootState } from "../../store";
 import { resetAuth } from "../../store/authSlice";
 import { updateProfileThunk } from "../../store/thunks/updateProfileThunk";
 import { createAgencyThunk } from "../../store/thunks/createAgencyThunk";
+import { updateAgencyThunk } from "../../store/thunks/updateAgencyThunk";
+import { deleteAgencyThunk } from "../../store/thunks/deleteAgencyThunk";
 import { useState } from "react";
-import { CiEdit } from "react-icons/ci";
+import { CiEdit, CiTrash } from "react-icons/ci";
 import { requestDeleteAccountThunk } from "../../store/thunks/requestDeleteAccountThunk";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -40,9 +42,14 @@ function Dashboard() {
   const user = useSelector((state: RootState) => state.auth.user);
   const updatingProfile = useSelector((state: RootState) => state.auth.updatingProfile);
   const creatingAgency = useSelector((state: RootState) => state.auth.creatingAgency);
+  const updatingAgency = useSelector((state: RootState) => state.auth.updatingAgency);
+  const deletingAgency = useSelector((state: RootState) => state.auth.deletingAgency);
   const { requestingDeleteAccount } = useSelector((state: RootState) => state.auth);
 
   const isAgent = user?.role === "AGENT";
+  // agency exists once any agency field has been populated by a previous create
+  const hasAgency = Boolean(user?.name || user?.license_number);
+
   const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
   const roleLabel = user?.role ? (ROLE_LABELS[user.role] ?? user.role) : "-";
 
@@ -120,7 +127,12 @@ function Dashboard() {
 
   const handleAgentSave = async () => {
     try {
-      await dispatch(createAgencyThunk(agentValues)).unwrap();
+      // first submission creates the agency, every submission after that updates it
+      if (hasAgency) {
+        await dispatch(updateAgencyThunk(agentValues)).unwrap();
+      } else {
+        await dispatch(createAgencyThunk(agentValues)).unwrap();
+      }
       setIsEditingAgent(false);
       setAgentEditError(null);
     } catch (err: unknown) {
@@ -128,7 +140,19 @@ function Dashboard() {
     }
   };
 
-  /* ── delete ── */
+  const handleAgentDelete = async () => {
+    const confirmed = window.confirm("آیا از حذف آژانس خود مطمئن هستید؟ این عملیات غیرقابل بازگشت است.");
+    if (!confirmed) return;
+
+    try {
+      await dispatch(deleteAgencyThunk()).unwrap();
+      setAgentEditError(null);
+    } catch (err: unknown) {
+      setAgentEditError(typeof err === "string" ? err : "حذف آژانس ناموفق بود.");
+    }
+  };
+
+  /* ── delete account ── */
   const handleDelete = async () => {
     try {
       await dispatch(requestDeleteAccountThunk()).unwrap();
@@ -228,6 +252,8 @@ function Dashboard() {
     </div>
   );
 
+  const agentSaving = creatingAgency || updatingAgency;
+
   return (
     <main
       dir="rtl"
@@ -316,13 +342,25 @@ function Dashboard() {
                 <p className="text-xs font-medium text-sky-400 shrink-0">اطلاعات مشاور</p>
                 <div className="h-px flex-1 bg-white/10" />
                 {!isEditingAgent && (
-                  <button
-                    type="button"
-                    onClick={handleAgentEditStart}
-                    className="shrink-0 text-slate-500 transition-colors duration-200 hover:text-sky-400"
-                  >
-                    <CiEdit className="text-xl" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAgentEditStart}
+                      className="text-slate-500 transition-colors duration-200 hover:text-sky-400"
+                    >
+                      <CiEdit className="text-xl" />
+                    </button>
+                    {hasAgency && (
+                      <button
+                        type="button"
+                        onClick={handleAgentDelete}
+                        disabled={deletingAgency}
+                        className="text-slate-500 transition-colors duration-200 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <CiTrash className="text-xl" />
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -357,7 +395,7 @@ function Dashboard() {
                   <button
                     type="button"
                     onClick={handleAgentSave}
-                    disabled={creatingAgency}
+                    disabled={agentSaving}
                     className="
                       w-fit rounded-xl border border-sky-500/30 bg-sky-500/10 px-5 py-2.5
                       text-sm text-sky-300 transition-all duration-300
@@ -365,7 +403,7 @@ function Dashboard() {
                       disabled:opacity-50 disabled:cursor-not-allowed
                     "
                   >
-                    {creatingAgency ? "در حال ذخیره..." : "ذخیره"}
+                    {agentSaving ? "در حال ذخیره..." : "ذخیره"}
                   </button>
                   <button
                     type="button"

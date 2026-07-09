@@ -13,6 +13,8 @@ import { resetPasswordThunk } from "./thunks/resetPasswordThunk";
 import { changePhoneThunk } from "./thunks/changePhoneThunk";
 import { changePhoneOtpThunk } from "./thunks/changePhoneOtpThunk";
 import { createAgencyThunk } from "./thunks/createAgencyThunk";
+import { updateAgencyThunk } from "./thunks/updateAgencyThunk";
+import { deleteAgencyThunk } from "./thunks/deleteAgencyThunk";
 import { requestDeleteAccountThunk } from "./thunks/requestDeleteAccountThunk";
 import { confirmDeleteAccountThunk } from "./thunks/confirmDeleteAccountThunk";
 
@@ -41,6 +43,8 @@ interface AuthState {
   refreshingToken: boolean;
   updatingProfile: boolean;
   creatingAgency: boolean;
+  updatingAgency: boolean;
+  deletingAgency: boolean;
 
   resetOtpSessionToken: string | null;
   resetPasswordToken: string | null;
@@ -78,6 +82,8 @@ const initialState: AuthState = {
   refreshingToken: false,
   updatingProfile: false,
   creatingAgency: false,
+  updatingAgency: false,
+  deletingAgency: false,
 
   resetOtpSessionToken: null,
   resetPasswordToken: null,
@@ -116,6 +122,8 @@ const authSlice = createSlice({
       state.refreshingToken = false;
       state.updatingProfile = false;
       state.creatingAgency = false;
+      state.updatingAgency = false;
+      state.deletingAgency = false;
       state.resetOtpSessionToken = null;
       state.resetPasswordToken = null;
       state.sendingResetPhone = false;
@@ -318,6 +326,53 @@ const authSlice = createSlice({
       })
       .addCase(createAgencyThunk.rejected, (state, action) => {
         state.creatingAgency = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(updateAgencyThunk.pending, (state) => {
+        state.updatingAgency = true;
+        state.error = null;
+      })
+      .addCase(updateAgencyThunk.fulfilled, (state, action) => {
+        state.updatingAgency = false;
+        state.user = { ...state.user, ...action.payload };
+        persistStoredAuth({
+          accessToken: state.access_token,
+          refreshToken: state.refresh_token,
+          user: state.user,
+        });
+      })
+      .addCase(updateAgencyThunk.rejected, (state, action) => {
+        state.updatingAgency = false;
+        state.error = action.payload as string;
+      })
+
+      .addCase(deleteAgencyThunk.pending, (state) => {
+        state.deletingAgency = true;
+        state.error = null;
+      })
+      .addCase(deleteAgencyThunk.fulfilled, (state) => {
+        state.deletingAgency = false;
+        if (state.user) {
+          state.user = {
+            ...state.user,
+            name: undefined,
+            license_number: undefined,
+            business_phone: undefined,
+            description: undefined,
+            province: undefined,
+            city: undefined,
+            exact_address: undefined,
+          };
+          persistStoredAuth({
+            accessToken: state.access_token,
+            refreshToken: state.refresh_token,
+            user: state.user,
+          });
+        }
+      })
+      .addCase(deleteAgencyThunk.rejected, (state, action) => {
+        state.deletingAgency = false;
         state.error = action.payload as string;
       })
 
